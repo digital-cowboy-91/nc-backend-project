@@ -15,23 +15,38 @@
     }
   },
   "GET /api/articles": {
-    "description": "serves an array of all articles",
-    "queries": [
-      "author",
-      "topic",
-      "sort_by",
-      "order"
-    ],
+    "description": "serves an array of all articles sorted by date in descending order",
     "exampleResponse": {
       "articles": [
         {
-          "title": "Seafood substitutions are increasing",
+          "author": "grumpy19",
+          "title": "The Notorious MSG’s Unlikely Formula For Success",
+          "article_id": 34,
           "topic": "cooking",
-          "author": "weegembump",
-          "body": "Text from the article..",
-          "created_at": "2018-05-30T15:59:13.341Z",
+          "created_at": "2020-11-22T11:13:00.000Z",
           "votes": 0,
-          "comment_count": 6
+          "article_img_url": "https://images.pexels.com/photos/2403392/pexels-photo-2403392.jpeg?w=700&h=700",
+          "comment_count": 11
+        },
+        {
+          "author": "tickle122",
+          "title": "The battle for Node.js security has only begun",
+          "article_id": 12,
+          "topic": "coding",
+          "created_at": "2020-11-15T13:25:00.000Z",
+          "votes": 0,
+          "article_img_url": "https://images.pexels.com/photos/10845119/pexels-photo-10845119.jpeg?w=700&h=700",
+          "comment_count": 7
+        },
+        {
+          "author": "grumpy19",
+          "title": "JavaScript’s Apply, Call, and Bind Methods are Essential for JavaScript Professionals",
+          "article_id": 6,
+          "topic": "coding",
+          "created_at": "2020-11-11T15:09:00.000Z",
+          "votes": 0,
+          "article_img_url": "https://images.pexels.com/photos/4383298/pexels-photo-4383298.jpeg?w=700&h=700",
+          "comment_count": 11
         }
       ]
     }

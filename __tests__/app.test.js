@@ -103,3 +103,52 @@ describe("/api/articles/:article_id", () => {
     });
   });
 });
+
+describe("/api/articles", () => {
+  const base = "/api/articles";
+
+  describe("GET", () => {
+    test("Responds with 200 and article list", () => {
+      return request(app)
+        .get(base)
+        .expect(200)
+        .then((res) => {
+          const { articles } = res.body;
+
+          expect(articles.length).not.toBe(0);
+
+          articles.forEach((article) => {
+            expect(article).toEqual(
+              expect.objectContaining({
+                author: expect.any(String),
+                title: expect.any(String),
+                article_id: expect.any(Number),
+                topic: expect.any(String),
+                created_at: expect.any(String),
+                votes: expect.any(Number),
+                article_img_url: expect.any(String),
+                comment_count: expect.any(Number),
+              })
+            );
+          });
+        });
+    });
+
+    test("Article list is sorted by date in descending order by default", () => {
+      return request(app)
+        .get(base)
+        .expect(200)
+        .then((res) => {
+          const { articles } = res.body;
+
+          articles.reduce((prevDate, { created_at }) => {
+            const thisDate = new Date(created_at).getTime();
+
+            expect(prevDate >= thisDate).toBe(true);
+
+            return thisDate;
+          }, Infinity);
+        });
+    });
+  });
+});
