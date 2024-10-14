@@ -1,5 +1,5 @@
-function unhandledError(err, _req, res) {
-  console.error(err);
+function unhandledError(err, req, res, next) {
+  console.error("UNHANDLED ERROR", { err });
 
   res.status(500).send({ msg: "Something went wrong!" });
 }
