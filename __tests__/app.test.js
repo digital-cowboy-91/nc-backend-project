@@ -107,6 +107,15 @@ describe("/api/articles/:article_id", () => {
 describe("/api/articles/:article_id/comments", () => {
   const base = (id) => `/api/articles/${id}/comments`;
 
+  const commentSchema = {
+    comment_id: expect.any(Number),
+    votes: expect.any(Number),
+    created_at: expect.any(String),
+    author: expect.any(String),
+    body: expect.any(String),
+    article_id: expect.any(Number),
+  };
+
   describe("GET", () => {
     test("Responds with 200 and list of comments", () => {
       return request(app)
@@ -118,16 +127,7 @@ describe("/api/articles/:article_id/comments", () => {
           expect(comments.length).not.toBe(0);
 
           comments.forEach((comment) => {
-            expect(comment).toEqual(
-              expect.objectContaining({
-                comment_id: expect.any(Number),
-                votes: expect.any(Number),
-                created_at: expect.any(String),
-                author: expect.any(String),
-                body: expect.any(String),
-                article_id: expect.any(Number),
-              })
-            );
+            expect(comment).toEqual(expect.objectContaining(commentSchema));
           });
         });
     });
@@ -165,6 +165,107 @@ describe("/api/articles/:article_id/comments", () => {
         .then((res) => {
           expect(res.body.msg).toBe("Article does not exist");
         });
+    });
+  });
+
+  describe("POST", () => {
+    test("Responds with 201 and created comment", () => {
+      return request(app)
+        .post(base(1))
+        .send({
+          username: "lurker",
+          body: "Lorem ipsum dolor sit amet.",
+        })
+        .expect(201)
+        .then((res) => {
+          const { comment } = res.body;
+
+          expect(comment).toEqual(expect.objectContaining(commentSchema));
+        });
+    });
+
+    describe("Validation", () => {
+      test("Responds with 400 when body is missing or has invalid type", () => {
+        return request(app)
+          .post(base(1))
+          .send()
+          .expect(400)
+          .then((res) => {
+            expect(res.body.msg).toBe("Invalid data");
+          });
+      });
+
+      describe("element article_id", () => {
+        test("Responds with 400 when received invalid id type", () => {
+          return request(app)
+            .post(base("hello"))
+            .send({
+              username: "lurker",
+              body: "Lorem ipsum dolor sit amet.",
+            })
+            .expect(400)
+            .then((res) => {
+              expect(res.body.msg).toBe("Received invalid type");
+            });
+        });
+
+        test("Responds with 400 when received non existing id", () => {
+          return request(app)
+            .post(base(999))
+            .send({
+              username: "lurker",
+              body: "Lorem ipsum dolor sit amet.",
+            })
+            .expect(400)
+            .then((res) => {
+              expect(res.body.msg).toBe("Received invalid reference value");
+            });
+        });
+      });
+
+      describe("element body", () => {
+        test("Responds with 400 when body element is of wrong type", () => {
+          return request(app)
+            .post(base(1))
+            .send({ username: "lurker", body: true })
+            .expect(400)
+            .then((res) => {
+              expect(res.body.msg).toBe("Element 'body' has wrong type");
+            });
+        });
+
+        test("Responds with 400 when body element is too short", () => {
+          return request(app)
+            .post(base(1))
+            .send({ username: "lurker", body: "" })
+            .expect(400)
+            .then((res) => {
+              expect(res.body.msg).toBe("Element 'body' is too short");
+            });
+        });
+      });
+
+      describe("element username", () => {
+        test("Responds with 400 when username element is of wrong type", () => {
+          return request(app)
+            .post(base(1))
+            .send({ body: "Lorem ipsum dolor sit amet." })
+            .expect(400)
+            .then((res) => {
+              expect(res.body.msg).toBe("Element 'username' has wrong type");
+            });
+        });
+
+        test("Responds with 400 when username element is invalid", () => {
+          return request(app)
+            .post(base(1))
+            .send({ username: "hello", body: "Lorem ipsum dolor sit amet." })
+            .expect(400)
+            .then((res) => {
+              expect(res.body.msg).toBe("Received invalid reference value");
+            });
+        });
+      });
     });
   });
 });
