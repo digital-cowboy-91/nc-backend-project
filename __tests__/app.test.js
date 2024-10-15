@@ -132,6 +132,17 @@ describe("/api/articles/:article_id/comments", () => {
         });
     });
 
+    test("Responds with 200 and an empty array if article has no comments", () => {
+      return request(app)
+        .get(base(2))
+        .expect(200)
+        .then((res) => {
+          const { comments } = res.body;
+
+          expect(comments.length).toBe(0);
+        });
+    });
+
     test("Comments are ordered by date in descending order", () => {
       return request(app)
         .get(base(1))
