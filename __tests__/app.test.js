@@ -103,7 +103,7 @@ describe("/api/articles/:article_id", () => {
     });
   });
 
-  describe.only("PATCH", () => {
+  describe("PATCH", () => {
     const getArticleById = (id) =>
       request(app)
         .get(base + id)
