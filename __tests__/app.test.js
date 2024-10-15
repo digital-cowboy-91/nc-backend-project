@@ -4,6 +4,7 @@ const db = require("../db/connection.js");
 const seed = require("../db/seeds/seed.js");
 const testData = require("../db/data/test-data");
 const endpointsData = require("../endpoints.json");
+const req = require("express/lib/request.js");
 
 beforeEach(() => seed(testData));
 afterAll(() => db.end());
@@ -473,6 +474,32 @@ describe("/api/comments/:comment_id", () => {
         .expect(404)
         .then((res) => {
           expect(res.body.msg).toBe("Comment not found");
+        });
+    });
+  });
+});
+
+describe.only("/api/users", () => {
+  const base = "/api/users";
+  describe("GET", () => {
+    test("Responds with 200 and list of users", () => {
+      return request(app)
+        .get(base)
+        .expect(200)
+        .then((res) => {
+          const { users } = res.body;
+
+          expect(users.length).not.toBe(0);
+
+          users.forEach((user) => {
+            expect(user).toEqual(
+              expect.objectContaining({
+                username: expect.any(String),
+                name: expect.any(String),
+                avatar_url: expect.any(String),
+              })
+            );
+          });
         });
     });
   });
