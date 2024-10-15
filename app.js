@@ -10,6 +10,7 @@ const handlePGErrors = require("./api/middlewares/handlePgErrors");
 const handleCustomErrors = require("./api/middlewares/handleCustomErrors");
 const getArticles = require("./api/controllers/getArticles.controller");
 const getArticleComments = require("./api/controllers/getArticleComments.controller");
+const deleteComment = require("./api/controllers/deleteComment.controller");
 const postArticleComments = require("./api/controllers/postArticleComments.controller");
 const patchArticleById = require("./api/controllers/patchArticleById.controller");
 
@@ -30,6 +31,8 @@ app.get("/api/articles/:article_id/comments", getArticleComments);
 app.post("/api/articles/:article_id/comments", postArticleComments);
 
 app.get("/api/articles", getArticles);
+
+app.delete("/api/comments/:comment_id", deleteComment);
 
 app.use(handlePGErrors);
 app.use(handleCustomErrors);
