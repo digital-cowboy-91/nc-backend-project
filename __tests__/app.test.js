@@ -283,6 +283,24 @@ describe("/api/articles/:article_id/comments", () => {
         });
     });
 
+    test("Ignores extra elements", () => {
+      return request(app)
+        .post(base(1))
+        .send({
+          username: "lurker",
+          body: "Lorem ipsum dolor sit amet.",
+          votes: 100,
+          hello: "world",
+        })
+        .expect(201)
+        .then((res) => {
+          const { comment } = res.body;
+
+          expect(comment.votes).not.toBe(100);
+          expect(comment.hello).toBeUndefined();
+        });
+    });
+
     describe("Validation", () => {
       test("Responds with 400 when body is missing or has invalid type", () => {
         return request(app)
