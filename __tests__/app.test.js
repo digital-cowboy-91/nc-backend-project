@@ -104,6 +104,71 @@ describe("/api/articles/:article_id", () => {
   });
 });
 
+describe("/api/articles/:article_id/comments", () => {
+  const base = (id) => `/api/articles/${id}/comments`;
+
+  describe("GET", () => {
+    test("Responds with 200 and list of comments", () => {
+      return request(app)
+        .get(base(1))
+        .expect(200)
+        .then((res) => {
+          const { comments } = res.body;
+
+          expect(comments.length).not.toBe(0);
+
+          comments.forEach((comment) => {
+            expect(comment).toEqual(
+              expect.objectContaining({
+                comment_id: expect.any(Number),
+                votes: expect.any(Number),
+                created_at: expect.any(String),
+                author: expect.any(String),
+                body: expect.any(String),
+                article_id: expect.any(Number),
+              })
+            );
+          });
+        });
+    });
+
+    test("Comments are ordered by date in descending order", () => {
+      return request(app)
+        .get(base(1))
+        .expect(200)
+        .then((res) => {
+          const { comments } = res.body;
+
+          comments.reduce((prevDate, { created_at }) => {
+            const thisDate = new Date(created_at).getTime();
+
+            expect(prevDate >= thisDate).toBe(true);
+
+            return thisDate;
+          }, Infinity);
+        });
+    });
+
+    test("Responds with 400 and msg object when received invalid id type", () => {
+      return request(app)
+        .get(base("hello"))
+        .expect(400)
+        .then((res) => {
+          expect(res.body.msg).toBe("Received invalid type");
+        });
+    });
+
+    test("Responds with 404 and msg object when received non existing id", () => {
+      return request(app)
+        .get(base(999))
+        .expect(404)
+        .then((res) => {
+          expect(res.body.msg).toBe("Article does not exist");
+        });
+    });
+  });
+});
+
 describe("/api/articles", () => {
   const base = "/api/articles";
 

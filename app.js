@@ -9,6 +9,7 @@ const getArticleById = require("./api/controllers/getArticleById.controller");
 const handlePGErrors = require("./api/middlewares/handlePgErrors");
 const handleCustomErrors = require("./api/middlewares/handleCustomErrors");
 const getArticles = require("./api/controllers/getArticles.controller");
+const getArticleComments = require("./api/controllers/getArticleComments.controller");
 
 const app = express();
 
@@ -19,6 +20,8 @@ app.get("/api/topics", getTopics);
 app.get("/api", getApi);
 
 app.get("/api/articles/:article_id", getArticleById);
+
+app.get("/api/articles/:article_id/comments", getArticleComments);
 
 app.get("/api/articles", getArticles);
 
