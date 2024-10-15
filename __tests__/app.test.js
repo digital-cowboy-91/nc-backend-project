@@ -102,6 +102,105 @@ describe("/api/articles/:article_id", () => {
         });
     });
   });
+
+  describe.only("PATCH", () => {
+    const getArticleById = (id) =>
+      request(app)
+        .get(base + id)
+        .then((res) => res.body.article);
+
+    test("Responds with 200 and updated article", () => {
+      let originalArticle;
+
+      const newVote = -10;
+
+      return getArticleById(1)
+        .then((article) => {
+          article.votes += newVote;
+          originalArticle = article;
+
+          return request(app)
+            .patch(base + 1)
+            .send({ inc_votes: newVote })
+            .expect(200);
+        })
+        .then((res) => {
+          const { article: patchedArticle } = res.body;
+
+          expect(originalArticle).toEqual(patchedArticle);
+        });
+    });
+
+    test("Does not update other fields", () => {
+      let originalArticle;
+
+      const newVote = 10;
+
+      return getArticleById(1)
+        .then((article) => {
+          article.votes += newVote;
+          originalArticle = article;
+
+          return request(app)
+            .patch(base + 1)
+            .send({ inc_votes: newVote, article_id: 0, title: "Hello" })
+            .expect(200);
+        })
+        .then((res) => {
+          const { article: patchedArticle } = res.body;
+
+          expect(originalArticle).toEqual(patchedArticle);
+        });
+    });
+
+    describe("Validation", () => {
+      describe("element inc_votes", () => {
+        test("Responds with 400 when inc_votes is of wrong type", () => {
+          return request(app)
+            .patch(base + 1)
+            .send({ article_id: 0, title: "Hello" })
+            .expect(400)
+            .then((res) => {
+              expect(res.body.msg).toBe("Element 'inc_votes' has invalid type");
+            });
+        });
+
+        test("Responds with 400 when inc_votes is not whole number", () => {
+          return request(app)
+            .patch(base + 1)
+            .send({ inc_votes: 0.8 })
+            .expect(400)
+            .then((res) => {
+              expect(res.body.msg).toBe(
+                "Invalid 'inc_votes', expected whole number"
+              );
+            });
+        });
+      });
+
+      describe("element article_id", () => {
+        test("Responds with 400 when received invalid id type", () => {
+          return request(app)
+            .patch(base + "hello")
+            .send({ inc_votes: 10 })
+            .expect(400)
+            .then((res) => {
+              expect(res.body.msg).toBe("Received invalid type");
+            });
+        });
+
+        test("Responds with 404 when received non existing id", () => {
+          return request(app)
+            .patch(base + 999)
+            .send({ inc_votes: 10 })
+            .expect(404)
+            .then((res) => {
+              expect(res.body.msg).toBe("Article does not exist");
+            });
+        });
+      });
+    });
+  });
 });
 
 describe("/api/articles/:article_id/comments", () => {
