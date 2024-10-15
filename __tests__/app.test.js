@@ -479,7 +479,7 @@ describe("/api/comments/:comment_id", () => {
   });
 });
 
-describe.only("/api/users", () => {
+describe("/api/users", () => {
   const base = "/api/users";
   describe("GET", () => {
     test("Responds with 200 and list of users", () => {
