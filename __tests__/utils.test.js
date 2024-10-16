@@ -2,6 +2,7 @@ const {
   convertTimestampToDate,
   createRef,
   formatComments,
+  customSort,
 } = require("../db/seeds/utils");
 
 describe("convertTimestampToDate", () => {
@@ -100,5 +101,101 @@ describe("formatComments", () => {
     const comments = [{ created_at: timestamp }];
     const formattedComments = formatComments(comments, {});
     expect(formattedComments[0].created_at).toEqual(new Date(timestamp));
+  });
+});
+
+describe.only("customSort", () => {
+  test("Returns boolean", () => {
+    expect(customSort()).toBe(true);
+  });
+
+  describe("handle numbers", () => {
+    test("Returns true when arr is sorted in ascending order", () => {
+      const nums = [{ n: 1 }, { n: 2 }, { n: 3 }];
+      expect(customSort(nums, "n", "ASC")).toBe(true);
+    });
+
+    test("Returns false when arr is not sorted in ascending order", () => {
+      const nums = [{ n: 1 }, { n: 4 }, { n: 3 }];
+      expect(customSort(nums, "n", "ASC")).toBe(false);
+    });
+
+    test("Returns true when arr is sorted in descending order", () => {
+      const nums = [{ n: 3 }, { n: 2 }, { n: 1 }];
+      expect(customSort(nums, "n", "DESC")).toBe(true);
+    });
+
+    test("Returns false when arr is not sorted in descending order", () => {
+      const nums = [{ n: 1 }, { n: 4 }, { n: 3 }];
+      expect(customSort(nums, "n", "DESC")).toBe(false);
+    });
+  });
+
+  describe("handle dates", () => {
+    test("Returns true when arr is sorted in ascending order", () => {
+      const dates = [
+        { d: "2020-07-09 21:11:00" },
+        { d: "2020-10-16 06:03:00" },
+        { d: "2020-11-03 09:12:00" },
+      ];
+
+      expect(customSort(dates, "d", "ASC", "time")).toBe(true);
+    });
+
+    test("Returns false when arr is not sorted in ascending order", () => {
+      const dates = [
+        { d: "2020-07-09 21:11:00" },
+        { d: "2020-11-03 09:12:00" },
+        { d: "2020-10-16 06:03:00" },
+      ];
+
+      expect(customSort(dates, "d", "ASC", "time")).toBe(false);
+    });
+
+    test("Returns true when arr is sorted in descending order", () => {
+      const dates = [
+        { d: "2020-11-03 09:12:00" },
+        { d: "2020-10-16 06:03:00" },
+        { d: "2020-07-09 21:11:00" },
+      ];
+
+      expect(customSort(dates, "d", "DESC", "time")).toBe(true);
+    });
+
+    test("Returns false when arr is not sorted in descending order", () => {
+      const dates = [
+        { d: "2020-07-09 21:11:00" },
+        { d: "2020-10-16 06:03:00" },
+        { d: "2020-11-03 09:12:00" },
+      ];
+
+      expect(customSort(dates, "d", "DESC", "time")).toBe(false);
+    });
+  });
+
+  describe("handle strings", () => {
+    test("Returns true when arr is sorted in ascending order", () => {
+      const strs = [{ s: "a" }, { s: "b" }, { s: "c" }];
+
+      expect(customSort(strs, "s", "ASC")).toBe(true);
+    });
+
+    test("Returns false when arr is not sorted in ascending order", () => {
+      const strs = [{ s: "a" }, { s: "c" }, { s: "b" }];
+
+      expect(customSort(strs, "s", "ASC")).toBe(false);
+    });
+
+    test("Returns true when arr is sorted in descending order", () => {
+      const strs = [{ s: "c" }, { s: "b" }, { s: "a" }];
+
+      expect(customSort(strs, "s", "DESC")).toBe(true);
+    });
+
+    test("Returns false when arr is not sorted in descending order", () => {
+      const strs = [{ s: "c" }, { s: "a" }, { s: "b" }];
+
+      expect(customSort(strs, "s", "DESC")).toBe(false);
+    });
   });
 });

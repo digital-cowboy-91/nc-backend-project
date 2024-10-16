@@ -5,6 +5,7 @@ const seed = require("../db/seeds/seed.js");
 const testData = require("../db/data/test-data");
 const endpointsData = require("../endpoints.json");
 const req = require("express/lib/request.js");
+const { customSort } = require("../db/seeds/utils.js");
 
 beforeEach(() => seed(testData));
 afterAll(() => db.end());
@@ -444,6 +445,136 @@ describe("/api/articles", () => {
             return thisDate;
           }, Infinity);
         });
+    });
+
+    describe("Queries", () => {
+      describe("sort_by - created_at by default", () => {
+        const getSortedArticles = (col) =>
+          request(app)
+            .get(`${base}?${col ? "sort_by=" + col : ""}`)
+            .expect(200)
+            .then((res) => res.body.articles);
+
+        test("200:created_at (default)", () => {
+          return getSortedArticles().then((articles) => {
+            expect(customSort(articles, "created_at", "DESC")).toBe(true);
+          });
+        });
+
+        test("200:article_id", () => {
+          return getSortedArticles("article_id").then((articles) => {
+            expect(customSort(articles, "article_id", "DESC")).toBe(true);
+          });
+        });
+
+        test("200:title", () => {
+          return getSortedArticles("title").then((articles) => {
+            expect(customSort(articles, "title", "DESC")).toBe(true);
+          });
+        });
+
+        test("200:topic", () => {
+          return getSortedArticles("topic").then((articles) => {
+            expect(customSort(articles, "topic", "DESC")).toBe(true);
+          });
+        });
+
+        test("200:author", () => {
+          return getSortedArticles("author").then((articles) => {
+            expect(customSort(articles, "author", "DESC")).toBe(true);
+          });
+        });
+
+        test("200:votes", () => {
+          return getSortedArticles("votes").then((articles) => {
+            expect(customSort(articles, "votes", "DESC")).toBe(true);
+          });
+        });
+
+        test("400:any", () => {
+          return request(app)
+            .get(`${base}?sort_by=any}`)
+            .expect(400)
+            .then((res) => {
+              expect(res.body.msg).toBe("Invalid sort_by query");
+            });
+        });
+
+        test("400:empty", () => {
+          return request(app)
+            .get(`${base}?sort_by=}`)
+            .expect(400)
+            .then((res) => {
+              expect(res.body.msg).toBe("Invalid sort_by query");
+            });
+        });
+      });
+      describe("order - descending by default", () => {
+        const getOrderedArticles = (col, order) => {
+          const queries = [col && "sort_by=" + col, order && "order=" + order]
+            .filter((q) => q)
+            .join("&");
+
+          return request(app)
+            .get(`${base}?${queries}`)
+            .expect(200)
+            .then((res) => res.body.articles);
+        };
+
+        test("200:created_at, DESC (default)", () => {
+          return getOrderedArticles().then((articles) => {
+            expect(customSort(articles, "created_at", "DESC")).toBe(true);
+          });
+        });
+
+        test("200:created_at, ASC", () => {
+          return getOrderedArticles(undefined, "ASC").then((articles) => {
+            expect(customSort(articles, "created_at", "ASC")).toBe(true);
+          });
+        });
+
+        test("200:article_id, DESC", () => {
+          return getOrderedArticles("article_id").then((articles) => {
+            expect(customSort(articles, "article_id", "DESC")).toBe(true);
+          });
+        });
+
+        test("200:article_id, ASC", () => {
+          return getOrderedArticles("article_id", "ASC").then((articles) => {
+            expect(customSort(articles, "article_id", "ASC")).toBe(true);
+          });
+        });
+
+        test("200:title, DESC", () => {
+          return getOrderedArticles("title").then((articles) => {
+            expect(customSort(articles, "title", "DESC")).toBe(true);
+          });
+        });
+
+        test("200:title, ASC", () => {
+          return getOrderedArticles("title", "ASC").then((articles) => {
+            expect(customSort(articles, "title", "ASC")).toBe(true);
+          });
+        });
+
+        test("400:any", () => {
+          return request(app)
+            .get(`${base}?order=any}`)
+            .expect(400)
+            .then((res) => {
+              expect(res.body.msg).toBe("Invalid order query");
+            });
+        });
+
+        test("400:empty", () => {
+          return request(app)
+            .get(`${base}?order=}`)
+            .expect(400)
+            .then((res) => {
+              expect(res.body.msg).toBe("Invalid order query");
+            });
+        });
+      });
     });
   });
 });

@@ -20,3 +20,27 @@ exports.formatComments = (comments, idLookup) => {
     };
   });
 };
+
+exports.customSort = (arr, property, order, convertTo) => {
+  let res = true;
+
+  arr?.reduce((prev, item, index) => {
+    let current = item[property];
+
+    if (convertTo === "time") {
+      current = new Date(current).getTime();
+    }
+
+    if (!index) return current;
+
+    if (order === "DESC") {
+      prev >= current || (res = false);
+    } else {
+      prev <= current || (res = false);
+    }
+
+    return current;
+  }, undefined);
+
+  return res;
+};
