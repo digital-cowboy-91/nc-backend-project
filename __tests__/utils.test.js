@@ -104,7 +104,7 @@ describe("formatComments", () => {
   });
 });
 
-describe.only("customSort", () => {
+describe("customSort", () => {
   test("Returns boolean", () => {
     expect(customSort()).toBe(true);
   });
