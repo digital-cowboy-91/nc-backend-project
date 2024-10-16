@@ -19,7 +19,6 @@ function updateArticleVote(id, incVotes) {
     UPDATE articles
         SET votes = votes + %s
         WHERE article_id = %L
-        RETURNING *;
   `,
     incVotes,
     id
