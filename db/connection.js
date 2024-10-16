@@ -12,11 +12,7 @@ if (!process.env.PGDATABASE) {
 const config = {};
 
 if (ENV === "production") {
-  if (!process.env.DATABASE_URL) {
-    throw new Error("DATABASE_URL not set");
-  }
-
-  config.connectionString = process.env.DATABASE_URL;
+  config.connectionString = process.env.PGDATABASE;
   config.max = 2;
 }
 
