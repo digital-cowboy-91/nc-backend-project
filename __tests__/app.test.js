@@ -24,6 +24,11 @@ describe("/api/healthCheck", () => {
 });
 
 describe("/api/topics", () => {
+  const schema = {
+    slug: expect.any(String),
+    description: expect.any(String),
+  };
+
   describe("GET", () => {
     test("Responds with 200 and array of topics", () => {
       return request(app)
@@ -35,12 +40,7 @@ describe("/api/topics", () => {
           expect(topics.length).not.toBe(0);
 
           topics.forEach((topic) => {
-            expect(topic).toEqual(
-              expect.objectContaining({
-                slug: expect.any(String),
-                description: expect.any(String),
-              })
-            );
+            expect(topic).toEqual(expect.objectContaining(schema));
           });
         });
     });
@@ -61,34 +61,33 @@ describe("/api", () => {
 });
 
 describe("/api/articles/:article_id", () => {
-  const base = "/api/articles/";
+  const schema = {
+    author: expect.any(String),
+    title: expect.any(String),
+    article_id: expect.any(Number),
+    body: expect.any(String),
+    topic: expect.any(String),
+    created_at: expect.any(String),
+    votes: expect.any(Number),
+    article_img_url: expect.any(String),
+    comment_count: expect.any(Number),
+  };
 
   describe("GET", () => {
     test("Responds with 200 and single article", () => {
       return request(app)
-        .get(base + 1)
+        .get("/api/articles/1")
         .expect(200)
         .then((res) => {
           const article = res.body.article;
 
-          expect(article).toEqual(
-            expect.objectContaining({
-              author: expect.any(String),
-              title: expect.any(String),
-              article_id: expect.any(Number),
-              body: expect.any(String),
-              topic: expect.any(String),
-              created_at: expect.any(String),
-              votes: expect.any(Number),
-              article_img_url: expect.any(String),
-            })
-          );
+          expect(article).toEqual(expect.objectContaining(schema));
         });
     });
 
     test("Responds with 400 and msg object when received invalid id type", () => {
       return request(app)
-        .get(base + "hello_world")
+        .get("/api/articles/hello_world")
         .expect(400)
         .then((res) => {
           expect(res.body.msg).toBe("Received invalid type");
@@ -97,7 +96,7 @@ describe("/api/articles/:article_id", () => {
 
     test("Responds with 404 and msg object when received non existing id", () => {
       return request(app)
-        .get(base + 10000)
+        .get("/api/articles/999")
         .expect(404)
         .then((res) => {
           expect(res.body.msg).toBe("Article does not exist");
@@ -108,7 +107,7 @@ describe("/api/articles/:article_id", () => {
   describe("PATCH", () => {
     const getArticleById = (id) =>
       request(app)
-        .get(base + id)
+        .get("/api/articles/" + id)
         .then((res) => res.body.article);
 
     test("Responds with 200 and updated article", () => {
@@ -122,7 +121,7 @@ describe("/api/articles/:article_id", () => {
           originalArticle = article;
 
           return request(app)
-            .patch(base + 1)
+            .patch("/api/articles/1")
             .send({ inc_votes: newVote })
             .expect(200);
         })
@@ -144,7 +143,7 @@ describe("/api/articles/:article_id", () => {
           originalArticle = article;
 
           return request(app)
-            .patch(base + 1)
+            .patch("/api/articles/1")
             .send({ inc_votes: newVote, article_id: 0, title: "Hello" })
             .expect(200);
         })
@@ -159,8 +158,8 @@ describe("/api/articles/:article_id", () => {
       describe("element inc_votes", () => {
         test("Responds with 400 when inc_votes is of wrong type", () => {
           return request(app)
-            .patch(base + 1)
-            .send({ article_id: 0, title: "Hello" })
+            .patch("/api/articles/1")
+            .send({ inc_votes: "hello", article_id: 0, title: "Hello" })
             .expect(400)
             .then((res) => {
               expect(res.body.msg).toBe("Element 'inc_votes' has invalid type");
@@ -169,7 +168,7 @@ describe("/api/articles/:article_id", () => {
 
         test("Responds with 400 when inc_votes is not whole number", () => {
           return request(app)
-            .patch(base + 1)
+            .patch("/api/articles/1")
             .send({ inc_votes: 0.8 })
             .expect(400)
             .then((res) => {
@@ -183,7 +182,7 @@ describe("/api/articles/:article_id", () => {
       describe("element article_id", () => {
         test("Responds with 400 when received invalid id type", () => {
           return request(app)
-            .patch(base + "hello")
+            .patch("/api/articles/hello")
             .send({ inc_votes: 10 })
             .expect(400)
             .then((res) => {
@@ -193,7 +192,7 @@ describe("/api/articles/:article_id", () => {
 
         test("Responds with 404 when received non existing id", () => {
           return request(app)
-            .patch(base + 999)
+            .patch("/api/articles/999")
             .send({ inc_votes: 10 })
             .expect(404)
             .then((res) => {
@@ -206,9 +205,7 @@ describe("/api/articles/:article_id", () => {
 });
 
 describe("/api/articles/:article_id/comments", () => {
-  const base = (id) => `/api/articles/${id}/comments`;
-
-  const commentSchema = {
+  const schema = {
     comment_id: expect.any(Number),
     votes: expect.any(Number),
     created_at: expect.any(String),
@@ -220,7 +217,7 @@ describe("/api/articles/:article_id/comments", () => {
   describe("GET", () => {
     test("Responds with 200 and list of comments", () => {
       return request(app)
-        .get(base(1))
+        .get("/api/articles/1/comments")
         .expect(200)
         .then((res) => {
           const { comments } = res.body;
@@ -228,14 +225,14 @@ describe("/api/articles/:article_id/comments", () => {
           expect(comments.length).not.toBe(0);
 
           comments.forEach((comment) => {
-            expect(comment).toEqual(expect.objectContaining(commentSchema));
+            expect(comment).toEqual(expect.objectContaining(schema));
           });
         });
     });
 
     test("Responds with 200 and an empty array if article has no comments", () => {
       return request(app)
-        .get(base(2))
+        .get("/api/articles/2/comments")
         .expect(200)
         .then((res) => {
           const { comments } = res.body;
@@ -246,7 +243,7 @@ describe("/api/articles/:article_id/comments", () => {
 
     test("Comments are ordered by date in descending order", () => {
       return request(app)
-        .get(base(1))
+        .get("/api/articles/1/comments")
         .expect(200)
         .then((res) => {
           const { comments } = res.body;
@@ -263,7 +260,7 @@ describe("/api/articles/:article_id/comments", () => {
 
     test("Responds with 400 and msg object when received invalid id type", () => {
       return request(app)
-        .get(base("hello"))
+        .get("/api/articles/hello/comments")
         .expect(400)
         .then((res) => {
           expect(res.body.msg).toBe("Received invalid type");
@@ -272,7 +269,7 @@ describe("/api/articles/:article_id/comments", () => {
 
     test("Responds with 404 and msg object when received non existing id", () => {
       return request(app)
-        .get(base(999))
+        .get("/api/articles/999/comments")
         .expect(404)
         .then((res) => {
           expect(res.body.msg).toBe("Article does not exist");
@@ -283,7 +280,7 @@ describe("/api/articles/:article_id/comments", () => {
   describe("POST", () => {
     test("Responds with 201 and created comment", () => {
       return request(app)
-        .post(base(1))
+        .post("/api/articles/1/comments")
         .send({
           username: "lurker",
           body: "Lorem ipsum dolor sit amet.",
@@ -292,13 +289,13 @@ describe("/api/articles/:article_id/comments", () => {
         .then((res) => {
           const { comment } = res.body;
 
-          expect(comment).toEqual(expect.objectContaining(commentSchema));
+          expect(comment).toEqual(expect.objectContaining(schema));
         });
     });
 
     test("Ignores extra elements", () => {
       return request(app)
-        .post(base(1))
+        .post("/api/articles/1/comments")
         .send({
           username: "lurker",
           body: "Lorem ipsum dolor sit amet.",
@@ -317,7 +314,7 @@ describe("/api/articles/:article_id/comments", () => {
     describe("Validation", () => {
       test("Responds with 400 when body is missing or has invalid type", () => {
         return request(app)
-          .post(base(1))
+          .post("/api/articles/1/comments")
           .send()
           .expect(400)
           .then((res) => {
@@ -328,7 +325,7 @@ describe("/api/articles/:article_id/comments", () => {
       describe("element article_id", () => {
         test("Responds with 400 when received invalid id type", () => {
           return request(app)
-            .post(base("hello"))
+            .post("/api/articles/hello/comments")
             .send({
               username: "lurker",
               body: "Lorem ipsum dolor sit amet.",
@@ -341,7 +338,7 @@ describe("/api/articles/:article_id/comments", () => {
 
         test("Responds with 400 when received non existing id", () => {
           return request(app)
-            .post(base(999))
+            .post("/api/articles/999/comments")
             .send({
               username: "lurker",
               body: "Lorem ipsum dolor sit amet.",
@@ -356,7 +353,7 @@ describe("/api/articles/:article_id/comments", () => {
       describe("element body", () => {
         test("Responds with 400 when body element is of wrong type", () => {
           return request(app)
-            .post(base(1))
+            .post("/api/articles/1/comments")
             .send({ username: "lurker", body: true })
             .expect(400)
             .then((res) => {
@@ -366,7 +363,7 @@ describe("/api/articles/:article_id/comments", () => {
 
         test("Responds with 400 when body element is too short", () => {
           return request(app)
-            .post(base(1))
+            .post("/api/articles/1/comments")
             .send({ username: "lurker", body: "" })
             .expect(400)
             .then((res) => {
@@ -378,7 +375,7 @@ describe("/api/articles/:article_id/comments", () => {
       describe("element username", () => {
         test("Responds with 400 when username element is of wrong type", () => {
           return request(app)
-            .post(base(1))
+            .post("/api/articles/1/comments")
             .send({ body: "Lorem ipsum dolor sit amet." })
             .expect(400)
             .then((res) => {
@@ -388,7 +385,7 @@ describe("/api/articles/:article_id/comments", () => {
 
         test("Responds with 400 when username element is invalid", () => {
           return request(app)
-            .post(base(1))
+            .post("/api/articles/1/comments")
             .send({ username: "hello", body: "Lorem ipsum dolor sit amet." })
             .expect(400)
             .then((res) => {
@@ -401,12 +398,21 @@ describe("/api/articles/:article_id/comments", () => {
 });
 
 describe("/api/articles", () => {
-  const base = "/api/articles";
+  const schema = {
+    author: expect.any(String),
+    title: expect.any(String),
+    article_id: expect.any(Number),
+    topic: expect.any(String),
+    created_at: expect.any(String),
+    votes: expect.any(Number),
+    article_img_url: expect.any(String),
+    comment_count: expect.any(Number),
+  };
 
   describe("GET", () => {
     test("Responds with 200 and article list", () => {
       return request(app)
-        .get(base)
+        .get("/api/articles")
         .expect(200)
         .then((res) => {
           const { articles } = res.body;
@@ -414,25 +420,14 @@ describe("/api/articles", () => {
           expect(articles.length).not.toBe(0);
 
           articles.forEach((article) => {
-            expect(article).toEqual(
-              expect.objectContaining({
-                author: expect.any(String),
-                title: expect.any(String),
-                article_id: expect.any(Number),
-                topic: expect.any(String),
-                created_at: expect.any(String),
-                votes: expect.any(Number),
-                article_img_url: expect.any(String),
-                comment_count: expect.any(Number),
-              })
-            );
+            expect(article).toEqual(expect.objectContaining(schema));
           });
         });
     });
 
     test("Article list is sorted by date in descending order by default", () => {
       return request(app)
-        .get(base)
+        .get("/api/articles")
         .expect(200)
         .then((res) => {
           const { articles } = res.body;
@@ -451,7 +446,7 @@ describe("/api/articles", () => {
       describe("sort_by - created_at by default", () => {
         const getSortedArticles = (col) =>
           request(app)
-            .get(`${base}?${col ? "sort_by=" + col : ""}`)
+            .get(`/api/articles?${col ? "sort_by=" + col : ""}`)
             .expect(200)
             .then((res) => res.body.articles);
 
@@ -493,7 +488,7 @@ describe("/api/articles", () => {
 
         test("400:any", () => {
           return request(app)
-            .get(`${base}?sort_by=any}`)
+            .get(`/api/articles?sort_by=any}`)
             .expect(400)
             .then((res) => {
               expect(res.body.msg).toBe("Invalid sort_by query");
@@ -502,7 +497,7 @@ describe("/api/articles", () => {
 
         test("400:empty", () => {
           return request(app)
-            .get(`${base}?sort_by=}`)
+            .get(`/api/articles?sort_by=}`)
             .expect(400)
             .then((res) => {
               expect(res.body.msg).toBe("Invalid sort_by query");
@@ -516,7 +511,7 @@ describe("/api/articles", () => {
             .join("&");
 
           return request(app)
-            .get(`${base}?${queries}`)
+            .get(`/api/articles?${queries}`)
             .expect(200)
             .then((res) => res.body.articles);
         };
@@ -559,7 +554,7 @@ describe("/api/articles", () => {
 
         test("400:any", () => {
           return request(app)
-            .get(`${base}?order=any}`)
+            .get(`/api/articles?order=any}`)
             .expect(400)
             .then((res) => {
               expect(res.body.msg).toBe("Invalid order query");
@@ -568,7 +563,7 @@ describe("/api/articles", () => {
 
         test("400:empty", () => {
           return request(app)
-            .get(`${base}?order=}`)
+            .get(`/api/articles?order=}`)
             .expect(400)
             .then((res) => {
               expect(res.body.msg).toBe("Invalid order query");
@@ -578,7 +573,7 @@ describe("/api/articles", () => {
       describe("topic filter", () => {
         const getArticlesByTopic = (topic) =>
           request(app)
-            .get(`${base}?${topic ? "topic=" + topic : ""}`)
+            .get(`/api/articles?${topic ? "topic=" + topic : ""}`)
             .expect(200)
             .then((res) => res.body.articles);
 
@@ -596,7 +591,7 @@ describe("/api/articles", () => {
 
         test("400:glitch", () => {
           return request(app)
-            .get(`${base}?topic=glitch`)
+            .get(`/api/articles?topic=glitch`)
             .expect(400)
             .then((res) => {
               expect(res.body.msg).toBe("Invalid topic query");
@@ -608,12 +603,10 @@ describe("/api/articles", () => {
 });
 
 describe("/api/comments/:comment_id", () => {
-  const base = "/api/comments/";
-
   describe("DELETE", () => {
     test("Responds with 204 and no content", () => {
       return request(app)
-        .delete(base + 1)
+        .delete("/api/comments/1")
         .expect(204)
         .then((res) => {
           expect(res.body).toEqual({});
@@ -621,7 +614,7 @@ describe("/api/comments/:comment_id", () => {
     });
     test("Responds with 400 if invalid id type provided", () => {
       return request(app)
-        .delete(base + "hello")
+        .delete("/api/comments/hello")
         .expect(400)
         .then((res) => {
           expect(res.body.msg).toBe("Received invalid type");
@@ -629,7 +622,7 @@ describe("/api/comments/:comment_id", () => {
     });
     test("Responds with 404 if id does not exist", () => {
       return request(app)
-        .delete(base + 999)
+        .delete("/api/comments/999")
         .expect(404)
         .then((res) => {
           expect(res.body.msg).toBe("Comment not found");
@@ -639,11 +632,16 @@ describe("/api/comments/:comment_id", () => {
 });
 
 describe("/api/users", () => {
-  const base = "/api/users";
+  const schema = {
+    username: expect.any(String),
+    name: expect.any(String),
+    avatar_url: expect.any(String),
+  };
+
   describe("GET", () => {
     test("Responds with 200 and list of users", () => {
       return request(app)
-        .get(base)
+        .get("/api/users")
         .expect(200)
         .then((res) => {
           const { users } = res.body;
@@ -651,13 +649,7 @@ describe("/api/users", () => {
           expect(users.length).not.toBe(0);
 
           users.forEach((user) => {
-            expect(user).toEqual(
-              expect.objectContaining({
-                username: expect.any(String),
-                name: expect.any(String),
-                avatar_url: expect.any(String),
-              })
-            );
+            expect(user).toEqual(expect.objectContaining(schema));
           });
         });
     });

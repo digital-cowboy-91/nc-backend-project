@@ -9,6 +9,9 @@ function patchArticleById(req, res, next) {
     .then(() => {
       return updateArticleVote(article_id, inc_votes);
     })
+    .then(() => {
+      return readArticleById(article_id);
+    })
     .then((article) => {
       res.status(200).send({ article });
     })
