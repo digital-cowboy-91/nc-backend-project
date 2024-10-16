@@ -575,6 +575,34 @@ describe("/api/articles", () => {
             });
         });
       });
+      describe("topic filter", () => {
+        const getArticlesByTopic = (topic) =>
+          request(app)
+            .get(`${base}?${topic ? "topic=" + topic : ""}`)
+            .expect(200)
+            .then((res) => res.body.articles);
+
+        test("200:cats", () => {
+          return getArticlesByTopic("cats").then((articles) => {
+            expect(articles).toHaveLength(1);
+          });
+        });
+
+        test("200:mitch", () => {
+          return getArticlesByTopic("mitch").then((articles) => {
+            expect(articles).toHaveLength(12);
+          });
+        });
+
+        test("400:glitch", () => {
+          return request(app)
+            .get(`${base}?topic=glitch`)
+            .expect(400)
+            .then((res) => {
+              expect(res.body.msg).toBe("Invalid topic query");
+            });
+        });
+      });
     });
   });
 });

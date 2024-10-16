@@ -18,7 +18,8 @@
     "description": "serves an array of all articles sorted by date in descending order",
     "queries": {
       "sort_by": "author | title | article_id | topic | created_at | votes",
-      "order": "ASC | DESC"
+      "order": "ASC | DESC",
+      "topic": "<String>"
     },
     "exampleResponse": {
       "articles": [

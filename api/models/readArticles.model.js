@@ -18,6 +18,7 @@ function readArticles(query) {
 
   const sortBy = query.sort_by ?? "created_at";
   const order = query.order ?? "DESC";
+  const topic = query.topic;
 
   if (!allowed.sortBy.includes(sortBy)) {
     return rejectWith(400, "Invalid sort_by query");
@@ -30,20 +31,27 @@ function readArticles(query) {
   const SELECT = format(
     `
     SELECT %s, COUNT(comments.comment_id)::INT AS comment_count
-        FROM articles JOIN comments
+        FROM articles FULL JOIN comments
             ON articles.article_id = comments.article_id
-        GROUP BY articles.article_id
         `,
     allowed.columns.map((col) => "articles." + col)
   );
 
+  const WHERE = topic && format(`WHERE topic=%L`, topic);
+
+  const GROUP_BY = `GROUP BY articles.article_id`;
+
   const ORDER_BY = format(`ORDER BY articles.%s %s`, sortBy, order);
 
-  const sql = [SELECT, ORDER_BY].join(" ");
+  const sql = [SELECT, WHERE, GROUP_BY, ORDER_BY].filter((s) => s).join(" ");
 
-  // console.log(sql);
+  return db.query(sql).then((data) => {
+    if (topic && !data.rowCount) {
+      return rejectWith(400, "Invalid topic query");
+    }
 
-  return db.query(sql).then((data) => data.rows);
+    return data.rows;
+  });
 }
 
 function rejectWith(code, msg) {
