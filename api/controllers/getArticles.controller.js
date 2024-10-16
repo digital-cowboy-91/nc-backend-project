@@ -1,7 +1,9 @@
 const readArticles = require("../models/readArticles.model");
 
 function getArticles(req, res, next) {
-  return readArticles()
+  const { query } = req;
+
+  return readArticles(query)
     .then((articles) => {
       res.status(200).send({ articles });
     })
