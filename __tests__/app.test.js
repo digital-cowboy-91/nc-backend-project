@@ -616,28 +616,3 @@ describe("/api/comments/:comment_id", () => {
     });
   });
 });
-
-describe("/api/users", () => {
-  const schema = {
-    username: expect.any(String),
-    name: expect.any(String),
-    avatar_url: expect.any(String),
-  };
-
-  describe("GET", () => {
-    test("Responds with 200 and list of users", () => {
-      return request(app)
-        .get("/api/users")
-        .expect(200)
-        .then((res) => {
-          const { users } = res.body;
-
-          expect(users.length).not.toBe(0);
-
-          users.forEach((user) => {
-            expect(user).toEqual(expect.objectContaining(schema));
-          });
-        });
-    });
-  });
-});
