@@ -1,4 +1,4 @@
-const readTopics = require("../models/readTopics.model.js");
+const readTopics = require("../models/readTopics.model");
 
 function getTopics(_req, res, next) {
   return readTopics()

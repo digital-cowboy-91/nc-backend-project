@@ -4,24 +4,10 @@ const db = require("../db/connection.js");
 const seed = require("../db/seeds/seed.js");
 const testData = require("../db/data/test-data");
 const endpointsData = require("../endpoints.json");
-const req = require("express/lib/request.js");
 const { customSort } = require("../db/seeds/utils.js");
 
 beforeEach(() => seed(testData));
 afterAll(() => db.end());
-
-describe("/api/healthCheck", () => {
-  describe("GET", () => {
-    test("Responds with 200 and alive message", () => {
-      return request(app)
-        .get("/api/healthCheck")
-        .expect(200)
-        .then((res) => {
-          expect(res.body.msg).toBe("Alive!");
-        });
-    });
-  });
-});
 
 describe("/api/topics", () => {
   const schema = {

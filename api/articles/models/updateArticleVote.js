@@ -1,5 +1,5 @@
 const format = require("pg-format");
-const db = require("../../db/connection.js");
+const db = require("../../../db/connection.js");
 
 function updateArticleVote(id, incVotes) {
   if (typeof incVotes !== "number") {

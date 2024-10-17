@@ -1,5 +1,5 @@
 const format = require("pg-format");
-const db = require("../../db/connection.js");
+const db = require("../../../db/connection.js");
 
 function readArticleComments(article_id) {
   const sql = format(
