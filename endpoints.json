@@ -143,6 +143,19 @@
     "description": "deletes existing comment",
     "exampleResponse": {}
   },
+  "PATCH /api/comments/:comment_id": {
+    "description": "updates votes on existing comment",
+    "exampleResponse": {
+      "comment": {
+        "comment_id": 1,
+        "body": "Oh, I've got compassion running out of my nose, pal! I'm the Sultan of Sentiment!",
+        "article_id": 9,
+        "author": "butter_bridge",
+        "votes": 20,
+        "created_at": "2020-04-06T12: 17: 00.000Z"
+      }
+    }
+  },
   "GET /api/users": {
     "description": "serves an array of all users",
     "exampleResponse": {
@@ -163,6 +176,16 @@
           "avatar_url": "https://vignette1.wikia.nocookie.net/mrmen/images/7/7f/Mr_Happy.jpg/revision/latest?cb=20140102171729"
         }
       ]
+    }
+  },
+  "GET /api/users/:username": {
+    "description": "serves a single user",
+    "exampleResponse": {
+      "user": {
+        "username": "tickle122",
+        "name": "Tom Tickle",
+        "avatar_url": "https://vignette.wikia.nocookie.net/mrmen/images/d/d6/Mr-Tickle-9a.png/revision/latest?cb=20180127221953"
+      }
     }
   }
 }
