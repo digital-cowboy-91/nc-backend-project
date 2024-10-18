@@ -19,9 +19,18 @@
     "queries": {
       "sort_by": "author | title | article_id | topic | created_at | votes",
       "order": "ASC | DESC",
-      "topic": "<String>"
+      "topic": "<String>",
+      "limit": "<Number>",
+      "page": "<Number>"
     },
     "exampleResponse": {
+      "pagination": {
+        "total_count": 13,
+        "current_page": 1,
+        "total_pages": 3,
+        "next_page": 2,
+        "prev_page": null
+      },
       "articles": [
         {
           "author": "grumpy19",
