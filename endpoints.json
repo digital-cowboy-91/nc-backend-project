@@ -14,6 +14,19 @@
       ]
     }
   },
+  "POST /api/topics": {
+    "description": "serves created topic",
+    "payload": {
+      "slug": "/^[a-z-]{3,20}$/.test(<String>)",
+      "description": "<String>"
+    },
+    "exampleResponse": {
+      "topic": {
+        "slug": "hello",
+        "description": "Lorem ipsum dolor sit amet"
+      }
+    }
+  },
   "GET /api/articles": {
     "description": "serves an array of all articles sorted by date in descending order",
     "queries": {

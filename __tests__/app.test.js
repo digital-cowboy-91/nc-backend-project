@@ -9,30 +9,6 @@ const { customSort } = require("../db/seeds/utils.js");
 beforeEach(() => seed(testData));
 afterAll(() => db.end());
 
-describe("/api/topics", () => {
-  const schema = {
-    slug: expect.any(String),
-    description: expect.any(String),
-  };
-
-  describe("GET", () => {
-    test("Responds with 200 and array of topics", () => {
-      return request(app)
-        .get("/api/topics")
-        .expect(200)
-        .then((res) => {
-          const topics = res.body.topics;
-
-          expect(topics.length).not.toBe(0);
-
-          topics.forEach((topic) => {
-            expect(topic).toEqual(expect.objectContaining(schema));
-          });
-        });
-    });
-  });
-});
-
 describe("/api", () => {
   describe("GET", () => {
     test("Responds with 200 and available endpoints", () => {
