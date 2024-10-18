@@ -124,7 +124,18 @@
   },
   "GET /api/articles/:article_id/comments": {
     "description": "serves all comments of single article sorted by date in descending order",
+    "queries": {
+      "limit": "<Number>",
+      "page": "<Number>"
+    },
     "exampleResponse": {
+      "pagination": {
+        "total_count": 11,
+        "current_page": 1,
+        "total_pages": 3,
+        "next_page": 2,
+        "prev_page": null
+      },
       "comments": [
         {
           "comment_id": 89,

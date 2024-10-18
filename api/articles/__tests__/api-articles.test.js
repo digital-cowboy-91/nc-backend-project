@@ -789,6 +789,217 @@ describe("/api/articles/:article_id/comments", () => {
           expect(res.body.msg).toBe("Article does not exist");
         });
     });
+
+    describe("Queries", () => {
+      describe("limit filter - 5 by default", () => {
+        const getLimitedComments = (limit) =>
+          request(app)
+            .get(
+              `/api/articles/1/comments?${
+                limit !== undefined ? "limit=" + limit : ""
+              }`
+            )
+            .expect(200)
+            .then((res) => res.body.comments);
+
+        test("200:undefined, defaults to 5 items", () => {
+          return getLimitedComments().then((comments) => {
+            expect(comments).toHaveLength(5);
+          });
+        });
+
+        test("200:3", () => {
+          return getLimitedComments(3).then((comments) => {
+            expect(comments).toHaveLength(3);
+          });
+        });
+
+        test("200:0, defaults to 5 items", () => {
+          return getLimitedComments(0).then((comments) => {
+            expect(comments).toHaveLength(5);
+          });
+        });
+
+        test("200:-1, defaults to 5 items", () => {
+          return getLimitedComments(-1).then((comments) => {
+            expect(comments).toHaveLength(5);
+          });
+        });
+
+        test("200:0.8, defaults to 5 items", () => {
+          return getLimitedComments(0.8).then((comments) => {
+            expect(comments).toHaveLength(5);
+          });
+        });
+
+        test("200:1000, serves 10 items max", () => {
+          return getLimitedComments(1000).then((comments) => {
+            expect(comments).toHaveLength(10);
+          });
+        });
+      });
+
+      describe("page filter", () => {
+        const articleOneCommentIds = [5, 2, 18, 13, 7, 8, 6, 12, 3, 4, 9];
+        const getLimitedComments = (limit, page) => {
+          const queries = [
+            "sort_by=article_id",
+            "order=ASC",
+            limit !== undefined && `limit=${limit}`,
+            page !== undefined && `page=${page}`,
+          ]
+            .filter((q) => q)
+            .join("&");
+
+          return request(app)
+            .get(`/api/articles/1/comments?${queries}`)
+            .expect(200)
+            .then((res) => res.body.comments);
+        };
+
+        test("200:undefined, has ids from index 0-4", () => {
+          return getLimitedComments().then((comments) => {
+            expect(comments).toHaveLength(5);
+
+            comments.forEach(({ comment_id }, index) => {
+              expect(comment_id).toBe(articleOneCommentIds[index]);
+            });
+          });
+        });
+
+        test("200:1, has ids from index 0-4", () => {
+          return getLimitedComments(5, 1).then((comments) => {
+            expect(comments).toHaveLength(5);
+
+            comments.forEach(({ comment_id }, index) => {
+              expect(comment_id).toBe(articleOneCommentIds[index]);
+            });
+          });
+        });
+
+        test("200:2, has ids from index 5-9", () => {
+          return getLimitedComments(5, 2).then((comments) => {
+            expect(comments).toHaveLength(5);
+
+            comments.forEach(({ comment_id }, index) => {
+              expect(comment_id).toBe(articleOneCommentIds[index + 5]);
+            });
+          });
+        });
+
+        test("200:3, has ids from index 10-11", () => {
+          return getLimitedComments(5, 3).then((comments) => {
+            expect(comments).toHaveLength(1);
+
+            comments.forEach(({ comment_id }, index) => {
+              expect(comment_id).toBe(articleOneCommentIds[index + 10]);
+            });
+          });
+        });
+
+        test("200:4, has empty array", () => {
+          return getLimitedComments(5, 4).then((comments) => {
+            expect(comments).toHaveLength(0);
+          });
+        });
+
+        test("200:0, has ids from index 0-4", () => {
+          return getLimitedComments(5, 1).then((comments) => {
+            expect(comments).toHaveLength(5);
+
+            comments.forEach(({ comment_id }, index) => {
+              expect(comment_id).toBe(articleOneCommentIds[index]);
+            });
+          });
+        });
+
+        test("200:-1, has ids from index 0-4", () => {
+          return getLimitedComments(5, -1).then((comments) => {
+            expect(comments).toHaveLength(5);
+
+            comments.forEach(({ comment_id }, index) => {
+              expect(comment_id).toBe(articleOneCommentIds[index]);
+            });
+          });
+        });
+
+        test("200:0.8, has ids from index 0-4", () => {
+          return getLimitedComments(5, 0.8).then((comments) => {
+            expect(comments).toHaveLength(5);
+
+            comments.forEach(({ comment_id }, index) => {
+              expect(comment_id).toBe(articleOneCommentIds[index]);
+            });
+          });
+        });
+
+        test("200:hello, has ids from index 0-4", () => {
+          return getLimitedComments(5, "hello").then((comments) => {
+            expect(comments).toHaveLength(5);
+
+            comments.forEach(({ comment_id }, index) => {
+              expect(comment_id).toBe(articleOneCommentIds[index]);
+            });
+          });
+        });
+      });
+
+      describe("pagination", () => {
+        test("200:limit=1, total_pages=11", () => {
+          return request(app)
+            .get("/api/articles/1/comments?limit=1")
+            .expect(200)
+            .then((res) => {
+              const {
+                pagination: { total_pages },
+              } = res.body;
+
+              expect(total_pages).toBe(11);
+            });
+        });
+
+        test("200:limit=3, total_pages=4", () => {
+          return request(app)
+            .get("/api/articles/1/comments?limit=3")
+            .expect(200)
+            .then((res) => {
+              const {
+                pagination: { total_pages },
+              } = res.body;
+
+              expect(total_pages).toBe(4);
+            });
+        });
+
+        test("200:page=2, prev_page=1, next_page=3", () => {
+          return request(app)
+            .get("/api/articles/1/comments?page=2")
+            .expect(200)
+            .then((res) => {
+              const {
+                pagination: { prev_page, next_page },
+              } = res.body;
+
+              expect(prev_page).toBe(1);
+              expect(next_page).toBe(3);
+            });
+        });
+
+        test("200:page=3, prev_page=2, next_page=null", () => {
+          return request(app)
+            .get("/api/articles/1/comments?page=3")
+            .expect(200)
+            .then((res) => {
+              const {
+                pagination: { prev_page, next_page },
+              } = res.body;
+
+              expect(prev_page).toBe(2);
+              expect(next_page).toBe(null);
+            });
+        });
+      });
+    });
   });
 
   describe("POST", () => {
