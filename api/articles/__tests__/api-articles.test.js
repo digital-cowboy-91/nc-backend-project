@@ -5,6 +5,7 @@ const db = require("../../../db/connection.js");
 const seed = require("../../../db/seeds/seed.js");
 const testData = require("../../../db/data/test-data/index.js");
 const { customSort } = require("../../../db/seeds/utils.js");
+const { getPagination } = require("../../api-utils.js");
 
 beforeEach(() => seed(testData));
 afterAll(() => db.end());
@@ -23,7 +24,7 @@ const useOutputSchema = () => ({
 
 describe("/api/articles", () => {
   describe("GET", () => {
-    test("Responds with 200 and article list", () => {
+    test("200: has article list", () => {
       const schema = useOutputSchema();
       delete schema.body;
 
@@ -32,8 +33,7 @@ describe("/api/articles", () => {
         .expect(200)
         .then((res) => {
           const { articles } = res.body;
-
-          expect(articles.length).not.toBe(0);
+          expect(articles.length).toBe(5);
 
           articles.forEach((article) => {
             expect(article).toEqual(expect.objectContaining(schema));
@@ -55,6 +55,17 @@ describe("/api/articles", () => {
 
             return thisDate;
           }, Infinity);
+        });
+    });
+
+    test("200: has pagination", () => {
+      return request(app)
+        .get("/api/articles")
+        .expect(200)
+        .then((res) => {
+          const { pagination } = res.body;
+
+          expect(pagination).toEqual(getPagination(13, 5, 0));
         });
     });
 
@@ -201,7 +212,7 @@ describe("/api/articles", () => {
 
         test("200:mitch", () => {
           return getArticlesByTopic("mitch").then((articles) => {
-            expect(articles).toHaveLength(12);
+            expect(articles).toHaveLength(5);
           });
         });
 
@@ -211,6 +222,207 @@ describe("/api/articles", () => {
             .expect(400)
             .then((res) => {
               expect(res.body.msg).toBe("Invalid topic query");
+            });
+        });
+      });
+      describe("limit filter - 10 by default", () => {
+        const getLimitedArticles = (limit) =>
+          request(app)
+            .get(`/api/articles?${limit !== undefined ? "limit=" + limit : ""}`)
+            .expect(200)
+            .then((res) => res.body.articles);
+
+        test("200:undefined, defaults to 5 items", () => {
+          return getLimitedArticles().then((articles) => {
+            expect(articles).toHaveLength(5);
+          });
+        });
+
+        test("200:3", () => {
+          return getLimitedArticles(3).then((articles) => {
+            expect(articles).toHaveLength(3);
+          });
+        });
+
+        test("200:0, defaults to 5 items", () => {
+          return getLimitedArticles(0).then((articles) => {
+            expect(articles).toHaveLength(5);
+          });
+        });
+
+        test("200:-1, defaults to 5 items", () => {
+          return getLimitedArticles(-1).then((articles) => {
+            expect(articles).toHaveLength(5);
+          });
+        });
+
+        test("200:0.8, defaults to 5 items", () => {
+          return getLimitedArticles(0.8).then((articles) => {
+            expect(articles).toHaveLength(5);
+          });
+        });
+
+        test("200:1000, serves 10 items max", () => {
+          return getLimitedArticles(1000).then((articles) => {
+            expect(articles).toHaveLength(10);
+          });
+        });
+      });
+      describe("page filter", () => {
+        const getLimitedArticles = (limit, page) => {
+          const queries = [
+            "sort_by=article_id",
+            "order=ASC",
+            limit !== undefined && `limit=${limit}`,
+            page !== undefined && `page=${page}`,
+          ]
+            .filter((q) => q)
+            .join("&");
+
+          return request(app)
+            .get(`/api/articles?${queries}`)
+            .expect(200)
+            .then((res) => res.body.articles);
+        };
+
+        test("200:undefined, has ids from 1-5", () => {
+          return getLimitedArticles().then((articles) => {
+            expect(articles).toHaveLength(5);
+
+            articles.forEach(({ article_id }, index) => {
+              expect(article_id).toBe(index + 1);
+            });
+          });
+        });
+
+        test("200:1, has ids from 1-5", () => {
+          return getLimitedArticles(5, 1).then((articles) => {
+            expect(articles).toHaveLength(5);
+
+            articles.forEach(({ article_id }, index) => {
+              expect(article_id).toBe(index + 1);
+            });
+          });
+        });
+
+        test("200:2, has ids from 6-10", () => {
+          return getLimitedArticles(5, 2).then((articles) => {
+            expect(articles).toHaveLength(5);
+
+            articles.forEach(({ article_id }, index) => {
+              expect(article_id).toBe(index + 6);
+            });
+          });
+        });
+
+        test("200:3, has ids from 11-13", () => {
+          return getLimitedArticles(5, 3).then((articles) => {
+            expect(articles).toHaveLength(3);
+
+            articles.forEach(({ article_id }, index) => {
+              expect(article_id).toBe(index + 11);
+            });
+          });
+        });
+
+        test("200:4, has empty array", () => {
+          return getLimitedArticles(5, 4).then((articles) => {
+            expect(articles).toHaveLength(0);
+          });
+        });
+
+        test("200:0, has ids from 1-5", () => {
+          return getLimitedArticles(5, 1).then((articles) => {
+            expect(articles).toHaveLength(5);
+
+            articles.forEach(({ article_id }, index) => {
+              expect(article_id).toBe(index + 1);
+            });
+          });
+        });
+
+        test("200:-1, has ids from 1-5", () => {
+          return getLimitedArticles(5, -1).then((articles) => {
+            expect(articles).toHaveLength(5);
+
+            articles.forEach(({ article_id }, index) => {
+              expect(article_id).toBe(index + 1);
+            });
+          });
+        });
+
+        test("200:0.8, has ids from 1-5", () => {
+          return getLimitedArticles(5, 0.8).then((articles) => {
+            expect(articles).toHaveLength(5);
+
+            articles.forEach(({ article_id }, index) => {
+              expect(article_id).toBe(index + 1);
+            });
+          });
+        });
+
+        test("200:hello, has ids from 1-5", () => {
+          return getLimitedArticles(5, "hello").then((articles) => {
+            expect(articles).toHaveLength(5);
+
+            articles.forEach(({ article_id }, index) => {
+              expect(article_id).toBe(index + 1);
+            });
+          });
+        });
+      });
+      describe("pagination", () => {
+        test("200:limit=1, total_pages=13", () => {
+          return request(app)
+            .get("/api/articles?limit=1")
+            .expect(200)
+            .then((res) => {
+              const {
+                pagination: { total_pages },
+              } = res.body;
+
+              expect(total_pages).toBe(13);
+            });
+        });
+
+        test("200:limit=3, total_pages=5", () => {
+          return request(app)
+            .get("/api/articles?limit=3")
+            .expect(200)
+            .then((res) => {
+              const {
+                pagination: { total_pages },
+              } = res.body;
+
+              expect(total_pages).toBe(5);
+            });
+        });
+
+        test("200:page=2, prev_page=1, next_page=3", () => {
+          return request(app)
+            .get("/api/articles?page=2")
+            .expect(200)
+            .then((res) => {
+              const {
+                pagination: { prev_page, next_page },
+              } = res.body;
+
+              expect(prev_page).toBe(1);
+              expect(next_page).toBe(3);
+            });
+        });
+
+        test("200:page=3, prev_page=2, next_page=null", () => {
+          return request(app)
+            .get("/api/articles?page=3")
+            .expect(200)
+            .then((res) => {
+              const {
+                pagination: { prev_page, next_page },
+              } = res.body;
+
+              expect(prev_page).toBe(2);
+              expect(next_page).toBe(null);
             });
         });
       });

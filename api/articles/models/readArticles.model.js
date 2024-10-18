@@ -1,5 +1,6 @@
 const format = require("pg-format");
 const db = require("../../../db/connection.js");
+const { getLimit, getOffset, getPagination } = require("../../api-utils.js");
 
 function readArticles(query) {
   const allowed = {
@@ -19,6 +20,8 @@ function readArticles(query) {
   const sortBy = query.sort_by ?? "created_at";
   const order = query.order ?? "DESC";
   const topic = query.topic;
+  const limit = getLimit(query.limit);
+  const offset = getOffset(limit, query.page);
 
   if (!allowed.sortBy.includes(sortBy)) {
     return rejectWith(400, "Invalid sort_by query");
@@ -43,14 +46,27 @@ function readArticles(query) {
 
   const ORDER_BY = format(`ORDER BY articles.%s %s`, sortBy, order);
 
-  const sql = [SELECT, WHERE, GROUP_BY, ORDER_BY].filter((s) => s).join(" ");
+  const LIMIT = format(`LIMIT %s OFFSET %s`, limit, offset);
 
-  return db.query(sql).then((data) => {
-    if (topic && !data.rowCount) {
+  const sqlMain = [SELECT, WHERE, GROUP_BY, ORDER_BY, LIMIT]
+    .filter((s) => s)
+    .join(" ");
+
+  const sqlCount = `SELECT COUNT(*)::INT FROM articles`;
+
+  const promises = [db.query(sqlCount), db.query(sqlMain)];
+
+  return Promise.all(promises).then(([count, main]) => {
+    const pagination = getPagination(count.rows[0].count, limit, offset);
+
+    if (topic && !main.rowCount) {
       return rejectWith(400, "Invalid topic query");
     }
 
-    return data.rows;
+    return {
+      pagination,
+      articles: main.rows,
+    };
   });
 }
 
