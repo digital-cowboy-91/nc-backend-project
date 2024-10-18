@@ -717,7 +717,7 @@ describe("/api/articles/:article_id", () => {
     });
   });
 
-  describe.only("DELETE", () => {
+  describe("DELETE", () => {
     test("204: has no content", () => {
       return request(app)
         .delete("/api/articles/1")
