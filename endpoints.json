@@ -135,6 +135,10 @@
       }
     }
   },
+  "DELETE /api/articles/:article_id": {
+    "description": "deletes single article",
+    "exampleResponse": {}
+  },
   "GET /api/articles/:article_id/comments": {
     "description": "serves all comments of single article sorted by date in descending order",
     "queries": {
