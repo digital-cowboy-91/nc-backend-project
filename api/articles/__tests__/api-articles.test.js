@@ -716,6 +716,36 @@ describe("/api/articles/:article_id", () => {
       });
     });
   });
+
+  describe("DELETE", () => {
+    test("204: has no content", () => {
+      return request(app)
+        .delete("/api/articles/1")
+        .expect(204)
+        .then((res) => {
+          expect(res.body).toEqual({});
+        });
+    });
+
+    describe("Validation", () => {
+      test("400: article_id has invalid type", () => {
+        return request(app)
+          .delete("/api/articles/hello")
+          .expect(400)
+          .then((res) => {
+            expect(res.body.msg).toBe("Received invalid type");
+          });
+      });
+      test("404: article_id not found", () => {
+        return request(app)
+          .delete("/api/articles/999")
+          .expect(404)
+          .then((res) => {
+            expect(res.body.msg).toBe("Article not found");
+          });
+      });
+    });
+  });
 });
 
 describe("/api/articles/:article_id/comments", () => {
