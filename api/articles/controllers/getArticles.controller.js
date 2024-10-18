@@ -4,8 +4,8 @@ function getArticles(req, res, next) {
   const { query } = req;
 
   return readArticles(query)
-    .then((articles) => {
-      res.status(200).send({ articles });
+    .then((payload) => {
+      res.status(200).send(payload);
     })
     .catch((err) => next(err));
 }
