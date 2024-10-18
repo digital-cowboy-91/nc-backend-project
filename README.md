@@ -22,6 +22,10 @@ This application has been build using Test Driven Development methodology and it
 
 **Note:** If you need to change the port of the application, update `listener.js`
 
+## Interaction
+
+Open a browser or use any API platform/library to access `/api` endpoint. This endpoint serves API documentation (as JSON).
+
 ---
 
 This portfolio project was created as part of a Digital Skills Bootcamp in Software Engineering provided by [Northcoders](https://northcoders.com/)
