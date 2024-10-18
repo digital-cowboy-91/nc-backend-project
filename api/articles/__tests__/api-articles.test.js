@@ -225,7 +225,7 @@ describe("/api/articles", () => {
             });
         });
       });
-      describe("limit filter - 10 by default", () => {
+      describe("limit filter - 5 by default", () => {
         const getLimitedArticles = (limit) =>
           request(app)
             .get(`/api/articles?${limit !== undefined ? "limit=" + limit : ""}`)
