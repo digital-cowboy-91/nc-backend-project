@@ -1,14 +1,14 @@
 const express = require("express");
 
-const apiRoot = require("./api/router");
-const articles = require("./api/articles/router");
-const comments = require("./api/comments/router");
-const topics = require("./api/topics/router");
-const users = require("./api/users/router");
+const apiRoot = require("./api/root.router");
+const articles = require("./api/articles/articles.router");
+const comments = require("./api/comments/comments.router");
+const topics = require("./api/topics/topics.router");
+const users = require("./api/users/users.router");
 
-const unhandledError = require("./api/_middlewares/unhandledError");
-const handlePGErrors = require("./api/_middlewares/handlePgErrors");
-const handleCustomErrors = require("./api/_middlewares/handleCustomErrors");
+const unhandledError = require("./api/middlewares/unhandledError");
+const handlePGErrors = require("./api/middlewares/handlePgErrors");
+const handleCustomErrors = require("./api/middlewares/handleCustomErrors");
 
 const app = express();
 

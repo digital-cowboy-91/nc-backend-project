@@ -1,11 +1,8 @@
 const request = require("supertest");
 const app = require("../../../app.js");
-
 const db = require("../../../db/connection.js");
-const seed = require("../../../db/seeds/seed.js");
-const testData = require("../../../db/data/test-data/index.js");
+const { seedTest } = require("../../../db/seeds/seed-test.js");
 
-beforeEach(() => seed(testData));
 afterAll(() => db.end());
 
 describe("/api/topics", () => {
@@ -15,6 +12,8 @@ describe("/api/topics", () => {
   };
 
   describe("GET", () => {
+    beforeAll(seedTest);
+
     test("200: has list of topics", () => {
       return request(app)
         .get("/api/topics")
@@ -32,42 +31,48 @@ describe("/api/topics", () => {
   });
 
   describe("POST", () => {
-    test("201: has created topic", () => {
-      const payload = {
-        slug: "hello",
-        description: "description here",
-      };
+    describe("Mutation", () => {
+      beforeEach(seedTest);
 
-      return request(app)
-        .post("/api/topics")
-        .send(payload)
-        .expect(201)
-        .then((res) => {
-          const { topic } = res.body;
+      test("201: has created topic", () => {
+        const payload = {
+          slug: "hello",
+          description: "description here",
+        };
 
-          expect(topic).toEqual(payload);
-        });
-    });
+        return request(app)
+          .post("/api/topics")
+          .send(payload)
+          .expect(201)
+          .then((res) => {
+            const { topic } = res.body;
 
-    test("201: ignores other elements", () => {
-      const payload = {
-        slug: "hello",
-        description: "description here",
-        lorem: "ipsum",
-      };
+            expect(topic).toEqual(payload);
+          });
+      });
 
-      return request(app)
-        .post("/api/topics")
-        .send(payload)
-        .expect(201)
-        .then((res) => {
-          const { topic } = res.body;
+      test("201: ignores other elements", () => {
+        const payload = {
+          slug: "hello",
+          description: "description here",
+          lorem: "ipsum",
+        };
 
-          expect(topic.lorem).toBe(undefined);
-        });
+        return request(app)
+          .post("/api/topics")
+          .send(payload)
+          .expect(201)
+          .then((res) => {
+            const { topic } = res.body;
+
+            expect(topic.lorem).toBe(undefined);
+          });
+      });
     });
 
     describe("Validation", () => {
+      beforeAll(seedTest);
+
       describe("element slug", () => {
         test("400:undefined = invalid type", () => {
           const payload = {

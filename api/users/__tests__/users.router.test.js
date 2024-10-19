@@ -1,11 +1,9 @@
 const request = require("supertest");
 const app = require("../../../app.js");
-
 const db = require("../../../db/connection.js");
-const seed = require("../../../db/seeds/seed.js");
-const testData = require("../../../db/data/test-data/index.js");
+const { seedTest } = require("../../../db/seeds/seed-test.js");
 
-beforeEach(() => seed(testData));
+beforeAll(seedTest);
 afterAll(() => db.end());
 
 const schema = {

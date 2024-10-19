@@ -1,11 +1,8 @@
 const request = require("supertest");
 const app = require("../../../app.js");
-
 const db = require("../../../db/connection.js");
-const seed = require("../../../db/seeds/seed.js");
-const testData = require("../../../db/data/test-data/index.js");
+const { seedTest } = require("../../../db/seeds/seed-test.js");
 
-beforeEach(() => seed(testData));
 afterAll(() => db.end());
 
 const schema = {
@@ -19,16 +16,22 @@ const schema = {
 
 describe("/api/comments/:comment_id", () => {
   describe("DELETE", () => {
-    test("204: has no content", () => {
-      return request(app)
-        .delete("/api/comments/1")
-        .expect(204)
-        .then((res) => {
-          expect(res.body).toEqual({});
-        });
+    describe("Mutation", () => {
+      beforeEach(seedTest);
+
+      test("204: has no content", () => {
+        return request(app)
+          .delete("/api/comments/1")
+          .expect(204)
+          .then((res) => {
+            expect(res.body).toEqual({});
+          });
+      });
     });
 
     describe("Validation", () => {
+      beforeAll(seedTest);
+
       test("400: comment_id has invalid type", () => {
         return request(app)
           .delete("/api/comments/hello")
@@ -49,51 +52,57 @@ describe("/api/comments/:comment_id", () => {
   });
 
   describe("PATCH", () => {
-    test("200: has valid comment", () => {
-      return request(app)
-        .patch("/api/comments/1")
-        .send({ inc_votes: 4 })
-        .expect(200)
-        .then((res) => {
-          const { comment } = res.body;
+    describe("Mutation", () => {
+      beforeEach(seedTest);
 
-          expect(comment).toEqual(expect.objectContaining(schema));
-        });
-    });
+      test("200: has valid comment", () => {
+        return request(app)
+          .patch("/api/comments/1")
+          .send({ inc_votes: 4 })
+          .expect(200)
+          .then((res) => {
+            const { comment } = res.body;
 
-    test("200: has updated votes", () => {
-      return request(app)
-        .patch("/api/comments/1")
-        .send({ inc_votes: 4 })
-        .expect(200)
-        .then((res) => {
-          const { comment } = res.body;
+            expect(comment).toEqual(expect.objectContaining(schema));
+          });
+      });
 
-          expect(comment.votes).toBe(20);
-        });
-    });
+      test("200: has updated votes", () => {
+        return request(app)
+          .patch("/api/comments/1")
+          .send({ inc_votes: 4 })
+          .expect(200)
+          .then((res) => {
+            const { comment } = res.body;
 
-    test("200: does not modify any other value", () => {
-      return request(app)
-        .patch("/api/comments/1")
-        .send({
-          inc_votes: 4,
-          comment_id: 5,
-          body: "Lorem ipsum",
-          hello: "world",
-        })
-        .expect(200)
-        .then((res) => {
-          const { comment } = res.body;
+            expect(comment.votes).toBe(20);
+          });
+      });
 
-          expect(comment.votes).toBe(20);
-          expect(comment.comment_id).toBe(1);
-          expect(comment.body).not.toBe("Lorem ipsum");
-          expect(comment.hello).toBe(undefined);
-        });
+      test("200: does not modify any other value", () => {
+        return request(app)
+          .patch("/api/comments/1")
+          .send({
+            inc_votes: 4,
+            comment_id: 5,
+            body: "Lorem ipsum",
+            hello: "world",
+          })
+          .expect(200)
+          .then((res) => {
+            const { comment } = res.body;
+
+            expect(comment.votes).toBe(20);
+            expect(comment.comment_id).toBe(1);
+            expect(comment.body).not.toBe("Lorem ipsum");
+            expect(comment.hello).toBe(undefined);
+          });
+      });
     });
 
     describe("Validation", () => {
+      beforeAll(seedTest);
+
       test("400: inc_votes has invalid type", () => {
         return request(app)
           .patch("/api/comments/1")

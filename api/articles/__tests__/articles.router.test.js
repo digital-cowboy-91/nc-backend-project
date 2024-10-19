@@ -1,13 +1,10 @@
 const request = require("supertest");
 const app = require("../../../app.js");
-
+const { seedTest } = require("../../../db/seeds/seed-test.js");
 const db = require("../../../db/connection.js");
-const seed = require("../../../db/seeds/seed.js");
-const testData = require("../../../db/data/test-data/index.js");
 const { customSort } = require("../../../db/seeds/utils.js");
-const { getPagination } = require("../../api-utils.js");
+const { getPagination } = require("../../api.utils.js");
 
-beforeEach(() => seed(testData));
 afterAll(() => db.end());
 
 const useOutputSchema = () => ({
@@ -24,6 +21,8 @@ const useOutputSchema = () => ({
 
 describe("/api/articles", () => {
   describe("GET", () => {
+    beforeAll(seedTest);
+
     test("200: has article list", () => {
       const schema = useOutputSchema();
       delete schema.body;
@@ -430,6 +429,8 @@ describe("/api/articles", () => {
   });
 
   describe("POST", () => {
+    beforeEach(seedTest);
+
     const usePayload = () => ({
       author: "lurker",
       title: "Hello World",
@@ -588,6 +589,8 @@ describe("/api/articles", () => {
 
 describe("/api/articles/:article_id", () => {
   describe("GET", () => {
+    beforeAll(seedTest);
+
     test("Responds with 200 and single article", () => {
       return request(app)
         .get("/api/articles/1")
@@ -624,51 +627,57 @@ describe("/api/articles/:article_id", () => {
         .get("/api/articles/" + id)
         .then((res) => res.body.article);
 
-    test("Responds with 200 and updated article", () => {
-      let originalArticle;
+    describe("Mutation", () => {
+      beforeEach(seedTest);
 
-      const newVote = -10;
+      test("Responds with 200 and updated article", () => {
+        let originalArticle;
 
-      return getArticleById(1)
-        .then((article) => {
-          article.votes += newVote;
-          originalArticle = article;
+        const newVote = -10;
 
-          return request(app)
-            .patch("/api/articles/1")
-            .send({ inc_votes: newVote })
-            .expect(200);
-        })
-        .then((res) => {
-          const { article: patchedArticle } = res.body;
+        return getArticleById(1)
+          .then((article) => {
+            article.votes += newVote;
+            originalArticle = article;
 
-          expect(originalArticle).toEqual(patchedArticle);
-        });
-    });
+            return request(app)
+              .patch("/api/articles/1")
+              .send({ inc_votes: newVote })
+              .expect(200);
+          })
+          .then((res) => {
+            const { article: patchedArticle } = res.body;
 
-    test("Does not update other fields", () => {
-      let originalArticle;
+            expect(originalArticle).toEqual(patchedArticle);
+          });
+      });
 
-      const newVote = 10;
+      test("Does not update other fields", () => {
+        let originalArticle;
 
-      return getArticleById(1)
-        .then((article) => {
-          article.votes += newVote;
-          originalArticle = article;
+        const newVote = 10;
 
-          return request(app)
-            .patch("/api/articles/1")
-            .send({ inc_votes: newVote, article_id: 0, title: "Hello" })
-            .expect(200);
-        })
-        .then((res) => {
-          const { article: patchedArticle } = res.body;
+        return getArticleById(1)
+          .then((article) => {
+            article.votes += newVote;
+            originalArticle = article;
 
-          expect(originalArticle).toEqual(patchedArticle);
-        });
+            return request(app)
+              .patch("/api/articles/1")
+              .send({ inc_votes: newVote, article_id: 0, title: "Hello" })
+              .expect(200);
+          })
+          .then((res) => {
+            const { article: patchedArticle } = res.body;
+
+            expect(originalArticle).toEqual(patchedArticle);
+          });
+      });
     });
 
     describe("Validation", () => {
+      beforeAll(seedTest);
+
       describe("element inc_votes", () => {
         test("Responds with 400 when inc_votes is of wrong type", () => {
           return request(app)
@@ -718,16 +727,22 @@ describe("/api/articles/:article_id", () => {
   });
 
   describe("DELETE", () => {
-    test("204: has no content", () => {
-      return request(app)
-        .delete("/api/articles/1")
-        .expect(204)
-        .then((res) => {
-          expect(res.body).toEqual({});
-        });
+    describe("Mutation", () => {
+      beforeEach(seedTest);
+
+      test("204: has no content", () => {
+        return request(app)
+          .delete("/api/articles/1")
+          .expect(204)
+          .then((res) => {
+            expect(res.body).toEqual({});
+          });
+      });
     });
 
     describe("Validation", () => {
+      beforeAll(seedTest);
+
       test("400: article_id has invalid type", () => {
         return request(app)
           .delete("/api/articles/hello")
@@ -759,6 +774,8 @@ describe("/api/articles/:article_id/comments", () => {
   };
 
   describe("GET", () => {
+    beforeAll(seedTest);
+
     test("Responds with 200 and list of comments", () => {
       return request(app)
         .get("/api/articles/1/comments")
@@ -1033,40 +1050,46 @@ describe("/api/articles/:article_id/comments", () => {
   });
 
   describe("POST", () => {
-    test("Responds with 201 and created comment", () => {
-      return request(app)
-        .post("/api/articles/1/comments")
-        .send({
-          username: "lurker",
-          body: "Lorem ipsum dolor sit amet.",
-        })
-        .expect(201)
-        .then((res) => {
-          const { comment } = res.body;
+    describe("Mutation", () => {
+      beforeEach(seedTest);
 
-          expect(comment).toEqual(expect.objectContaining(outputSchema));
-        });
-    });
+      test("Responds with 201 and created comment", () => {
+        return request(app)
+          .post("/api/articles/1/comments")
+          .send({
+            username: "lurker",
+            body: "Lorem ipsum dolor sit amet.",
+          })
+          .expect(201)
+          .then((res) => {
+            const { comment } = res.body;
 
-    test("Ignores extra elements", () => {
-      return request(app)
-        .post("/api/articles/1/comments")
-        .send({
-          username: "lurker",
-          body: "Lorem ipsum dolor sit amet.",
-          votes: 100,
-          hello: "world",
-        })
-        .expect(201)
-        .then((res) => {
-          const { comment } = res.body;
+            expect(comment).toEqual(expect.objectContaining(outputSchema));
+          });
+      });
 
-          expect(comment.votes).not.toBe(100);
-          expect(comment.hello).toBeUndefined();
-        });
+      test("Ignores extra elements", () => {
+        return request(app)
+          .post("/api/articles/1/comments")
+          .send({
+            username: "lurker",
+            body: "Lorem ipsum dolor sit amet.",
+            votes: 100,
+            hello: "world",
+          })
+          .expect(201)
+          .then((res) => {
+            const { comment } = res.body;
+
+            expect(comment.votes).not.toBe(100);
+            expect(comment.hello).toBeUndefined();
+          });
+      });
     });
 
     describe("Validation", () => {
+      beforeAll(seedTest);
+
       test("Responds with 400 when body is missing or has invalid type", () => {
         return request(app)
           .post("/api/articles/1/comments")

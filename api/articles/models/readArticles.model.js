@@ -1,6 +1,6 @@
 const format = require("pg-format");
 const db = require("../../../db/connection.js");
-const { getLimit, getOffset, getPagination } = require("../../api-utils.js");
+const { getLimit, getOffset, getPagination } = require("../../api.utils.js");
 
 function readArticles(query) {
   const allowed = {
