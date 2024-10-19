@@ -4,6 +4,7 @@ const {
   formatComments,
   customSort,
 } = require("../db/seeds/utils");
+require("jest-extended/all");
 
 describe("convertTimestampToDate", () => {
   test("returns a new object", () => {
