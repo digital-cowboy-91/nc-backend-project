@@ -15,7 +15,7 @@ function readArticleComments(article_id, query) {
 
   const sqlMain = [SELECT, LIMIT].filter((s) => s).join(" ");
   const sqlCount = format(
-    `SELECT COUNT(*)::INT FROM comments WHERE article_id = %s`,
+    `SELECT COUNT(*)::INT FROM comments WHERE article_id = %L`,
     article_id
   );
 
