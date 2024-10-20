@@ -16,10 +16,10 @@ const schema = {
 
 describe("/api/comments/:comment_id", () => {
   describe("DELETE", () => {
-    describe("Mutation", () => {
-      beforeEach(seedTest);
+    beforeAll(seedTest);
 
-      test("204: has no content", () => {
+    describe("Mutation", () => {
+      test("204: responds with no content", () => {
         return request(app)
           .delete("/api/comments/1")
           .expect(204)
@@ -30,56 +30,29 @@ describe("/api/comments/:comment_id", () => {
     });
 
     describe("Validation", () => {
-      beforeAll(seedTest);
-
-      test("400: comment_id has invalid type", () => {
-        return request(app)
-          .delete("/api/comments/hello")
-          .expect(400)
-          .then((res) => {
-            expect(res.body.msg).toBe("Received invalid type");
-          });
-      });
-      test("404: comment_id not found", () => {
-        return request(app)
-          .delete("/api/comments/999")
-          .expect(404)
-          .then((res) => {
-            expect(res.body.msg).toBe("Comment not found");
-          });
+      describe("comment_id", () => {
+        test.each([
+          [400, "hello", "Received invalid type"],
+          [404, 999, "Comment not found"],
+        ])("%s: value [%s] responds with [%s]", (code, id, msg) => {
+          return request(app)
+            .delete(`/api/comments/${id}`)
+            .expect(code)
+            .then((res) => {
+              expect(res.body.msg).toBe(msg);
+            });
+        });
       });
     });
   });
 
   describe("PATCH", () => {
+    beforeAll(seedTest);
+
     describe("Mutation", () => {
-      beforeEach(seedTest);
+      let data;
 
-      test("200: has valid comment", () => {
-        return request(app)
-          .patch("/api/comments/1")
-          .send({ inc_votes: 4 })
-          .expect(200)
-          .then((res) => {
-            const { comment } = res.body;
-
-            expect(comment).toEqual(expect.objectContaining(schema));
-          });
-      });
-
-      test("200: has updated votes", () => {
-        return request(app)
-          .patch("/api/comments/1")
-          .send({ inc_votes: 4 })
-          .expect(200)
-          .then((res) => {
-            const { comment } = res.body;
-
-            expect(comment.votes).toBe(20);
-          });
-      });
-
-      test("200: does not modify any other value", () => {
+      test("200: responds with some data", () => {
         return request(app)
           .patch("/api/comments/1")
           .send({
@@ -89,75 +62,59 @@ describe("/api/comments/:comment_id", () => {
             hello: "world",
           })
           .expect(200)
-          .then((res) => {
-            const { comment } = res.body;
+          .then((res) => (data = res.body));
+      });
 
-            expect(comment.votes).toBe(20);
-            expect(comment.comment_id).toBe(1);
-            expect(comment.body).not.toBe("Lorem ipsum");
-            expect(comment.hello).toBe(undefined);
-          });
+      test("data has [comment] with valid elements", () => {
+        const { comment } = data;
+
+        expect(comment).toEqual(expect.objectContaining(schema));
+      });
+
+      test("element [votes] is increased by [4] to [20]", () => {
+        const { comment } = data;
+
+        expect(comment.votes).toBe(20);
+      });
+
+      test("does not modify any other elements", () => {
+        const { comment } = data;
+
+        expect(comment.comment_id).not.toBe(5);
+        expect(comment.body).not.toBe("Lorem ipsum");
+        expect(comment.hello).toBeUndefined();
       });
     });
 
     describe("Validation", () => {
-      beforeAll(seedTest);
-
-      test("400: inc_votes has invalid type", () => {
-        return request(app)
-          .patch("/api/comments/1")
-          .send({
-            inc_votes: "4",
-          })
-          .expect(400)
-          .then((res) => {
-            expect(res.body.msg).toBe("Invalid type of inc_votes");
-          });
+      describe("inc_votes", () => {
+        test.each([
+          ["hello", "Invalid type of inc_votes"],
+          [0.5, "Invalid type of inc_votes"],
+        ])("400: value [%s] responds with [%s]", (inc_votes, msg) => {
+          return request(app)
+            .patch(`/api/comments/1`)
+            .send({ inc_votes })
+            .expect(400)
+            .then((res) => {
+              expect(res.body.msg).toBe(msg);
+            });
+        });
       });
 
-      test("400: inc_votes is not a whole number", () => {
-        return request(app)
-          .patch("/api/comments/1")
-          .send({
-            inc_votes: 0.8,
-          })
-          .expect(400)
-          .then((res) => {
-            expect(res.body.msg).toBe("Invalid type of inc_votes");
-          });
-      });
-
-      test("400: inc_votes is undefined", () => {
-        return request(app)
-          .patch("/api/comments/1")
-          .expect(400)
-          .then((res) => {
-            expect(res.body.msg).toBe("Invalid type of inc_votes");
-          });
-      });
-
-      test("400: comment_id has invalid type", () => {
-        return request(app)
-          .patch("/api/comments/hello")
-          .send({
-            inc_votes: -10,
-          })
-          .expect(400)
-          .then((res) => {
-            expect(res.body.msg).toBe("Received invalid type");
-          });
-      });
-
-      test("404: comment_id not found", () => {
-        return request(app)
-          .patch("/api/comments/999")
-          .send({
-            inc_votes: -10,
-          })
-          .expect(404)
-          .then((res) => {
-            expect(res.body.msg).toBe("Comment not found");
-          });
+      describe("comment_id", () => {
+        test.each([
+          [400, "hello", "Received invalid type"],
+          [404, 999, "Comment not found"],
+        ])("%s: id [%s] responds with [%s]", (code, id, msg) => {
+          return request(app)
+            .patch(`/api/comments/${id}`)
+            .send({ inc_votes: 4 })
+            .expect(code)
+            .then((res) => {
+              expect(res.body.msg).toBe(msg);
+            });
+        });
       });
     });
   });

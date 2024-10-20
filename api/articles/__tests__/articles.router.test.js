@@ -477,7 +477,8 @@ describe("/api/articles/:article_id", () => {
           [404, 999, "Article does not exist"],
         ])("%s: id [%s] responds with [%s]", (code, id, msg) => {
           return request(app)
-            .get(`/api/articles/${id}`)
+            .patch(`/api/articles/${id}`)
+            .send({ inc_votes: 5 })
             .expect(code)
             .then((res) => {
               expect(res.body.msg).toBe(msg);
