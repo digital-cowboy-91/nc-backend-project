@@ -9,7 +9,6 @@ function postArticleComments(req, res, next) {
 
   return readArticleById(article_id)
     .then(() => {
-      console.log(body);
       return createArticleComment(article_id, body);
     })
     .then((comment) => {
