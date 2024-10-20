@@ -506,10 +506,10 @@ describe("/api/articles/:article_id", () => {
       describe("article_id", () => {
         test.each([
           [400, "hello", "Received invalid type"],
-          [404, 999, "Article does not exist"],
+          [404, 999, "Article not found"],
         ])("%s: id [%s] responds with [%s]", (code, id, msg) => {
           return request(app)
-            .get(`/api/articles/${id}`)
+            .delete(`/api/articles/${id}`)
             .expect(code)
             .then((res) => {
               expect(res.body.msg).toBe(msg);
