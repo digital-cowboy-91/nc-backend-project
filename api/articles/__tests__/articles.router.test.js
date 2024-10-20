@@ -222,56 +222,56 @@ describe("/api/articles", () => {
           }
         );
       });
+    });
 
-      describe("pagination", () => {
-        test.each([
-          [
-            1,
-            1,
-            {
-              total_count: 13,
-              current_page: 1,
-              total_pages: 13,
-              next_page: 2,
-              prev_page: null,
-            },
-          ],
-          [
-            5,
-            2,
-            {
-              total_count: 13,
-              current_page: 2,
-              total_pages: 3,
-              next_page: 3,
-              prev_page: 1,
-            },
-          ],
-          [
-            3,
-            5,
-            {
-              total_count: 13,
-              current_page: 5,
-              total_pages: 5,
-              next_page: null,
-              prev_page: 4,
-            },
-          ],
-        ])(
-          "200: limit [%s] and page [%s] gives valid object [%o]",
-          (limit, page, expected) => {
-            return request(app)
-              .get(`/api/articles?limit=${limit}&page=${page}`)
-              .expect(200)
-              .then((res) => {
-                const { pagination } = res.body;
+    describe("Pagination", () => {
+      test.each([
+        [
+          1,
+          1,
+          {
+            total_count: 13,
+            current_page: 1,
+            total_pages: 13,
+            next_page: 2,
+            prev_page: null,
+          },
+        ],
+        [
+          5,
+          2,
+          {
+            total_count: 13,
+            current_page: 2,
+            total_pages: 3,
+            next_page: 3,
+            prev_page: 1,
+          },
+        ],
+        [
+          3,
+          5,
+          {
+            total_count: 13,
+            current_page: 5,
+            total_pages: 5,
+            next_page: null,
+            prev_page: 4,
+          },
+        ],
+      ])(
+        "200: limit [%s] and page [%s] gives valid object [%o]",
+        (limit, page, expected) => {
+          return request(app)
+            .get(`/api/articles?limit=${limit}&page=${page}`)
+            .expect(200)
+            .then((res) => {
+              const { pagination } = res.body;
 
-                expect(pagination).toEqual(expected);
-              });
-          }
-        );
-      });
+              expect(pagination).toEqual(expected);
+            });
+        }
+      );
     });
   });
 
@@ -374,7 +374,7 @@ describe("/api/articles", () => {
   });
 });
 
-xdescribe("/api/articles/:article_id", () => {
+describe("/api/articles/:article_id", () => {
   describe("GET", () => {
     beforeAll(seedTest);
 
