@@ -1,4 +1,5 @@
 const createArticleComment = require("../models/createArticleComments.model");
+const readArticleById = require("../models/readArticleById.model");
 
 function postArticleComments(req, res, next) {
   const {
@@ -6,7 +7,10 @@ function postArticleComments(req, res, next) {
     body,
   } = req;
 
-  return createArticleComment(article_id, body)
+  return readArticleById(article_id)
+    .then(() => {
+      return createArticleComment(article_id, body);
+    })
     .then((comment) => {
       res.status(201).send({ comment });
     })

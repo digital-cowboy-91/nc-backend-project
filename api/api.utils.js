@@ -17,7 +17,7 @@ exports.getOffset = (limit = 0, page) => {
 
 exports.getPagination = (total = 0, limit = 1, offset = 0) => {
   const total_count = total;
-  const current_page = (offset + limit) / limit;
+  const current_page = Math.ceil((offset + limit) / limit);
   const total_pages = Math.ceil(total / limit);
   const next_page = current_page < total_pages ? current_page + 1 : null;
   const prev_page = current_page === 1 ? null : current_page - 1;

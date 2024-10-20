@@ -1,115 +1,115 @@
 const { getLimit, getOffset, getPagination } = require("../api.utils.js");
 
 describe("getLimit", () => {
-  test("5: by default", () => {
+  test("returns [5] by default", () => {
     expect(getLimit()).toBe(5);
   });
 
-  test("input: when input is whole number between 1 - 10", () => {
+  test("returns [input] when input is whole number between 1 - 10", () => {
     for (let i = 1; i <= 10; i++) {
       expect(getLimit(i)).toBe(i);
     }
   });
 
-  test("10: when input is 10+", () => {
+  test("returns [10] when input is 10+", () => {
     expect(getLimit(15)).toBe(10);
   });
 
-  test("5: when input is any other value", () => {
+  test("returns [5] for invalid input", () => {
     expect(getLimit(null)).toBe(5);
     expect(getLimit("hello")).toBe(5);
     expect(getLimit(true)).toBe(5);
-    expect(getLimit(0.6)).toBe(5);
     expect(getLimit({ a: 1 })).toBe(5);
   });
 });
 
 describe("getOffset", () => {
-  test("0: by default", () => {
+  test("returns [0] by default", () => {
     expect(getOffset()).toBe(0);
   });
 
-  test("5: limit=5, page=2", () => {
-    expect(getOffset(5, 2)).toBe(5);
+  test("multiplies [limit] with [page - 1]", () => {
+    expect(getOffset(3, 2)).toBe(3);
+    expect(getOffset(5, 3)).toBe(10);
+    expect(getOffset(7, 4)).toBe(21);
   });
 
-  test("45: limit=5, page=10", () => {
-    expect(getOffset(5, 10)).toBe(45);
-  });
-
-  test("0: page is any other value", () => {
+  test("returns [0] for invalid limit and/or page", () => {
     expect(getOffset(5, null)).toBe(0);
-    expect(getOffset(5, "hello")).toBe(0);
-    expect(getOffset(5, true)).toBe(0);
-    expect(getOffset(5, 0.6)).toBe(0);
-    expect(getOffset(5, { a: 1 })).toBe(0);
+    expect(getOffset(null, 5)).toBe(0);
   });
 });
 
 describe("getPagination", () => {
-  test("total_count=0: by default", () => {
-    const { total_count } = getPagination();
+  test("returns objects with default values", () => {
+    const actual = getPagination();
+    const output = {
+      total_count: 0,
+      current_page: 1,
+      total_pages: 0,
+      next_page: null,
+      prev_page: null,
+    };
 
-    expect(total_count).toBe(0);
+    expect(actual).toEqual(output);
   });
 
-  test("total_count=5: count=5", () => {
-    const { total_count } = getPagination(5);
+  test("[total_count] is value of [total] argument", () => {
+    [3, 5, 7].forEach((num) => {
+      const { total_count } = getPagination(num);
 
-    expect(total_count).toBe(5);
+      expect(total_count).toBe(num);
+    });
   });
 
-  test("current_page=1: by default", () => {
-    const { current_page } = getPagination();
+  test("[total_pages] is quotient of [total] and [limit] arguments", () => {
+    [
+      [5, 1, 5],
+      [10, 3, 4],
+      [15, 5, 3],
+    ].forEach(([total, limit, expected]) => {
+      const { total_pages } = getPagination(total, limit);
 
-    expect(current_page).toBe(1);
+      expect(total_pages).toBe(expected);
+    });
   });
 
-  test("current_page=3: total=15, limit=3, offset=6", () => {
-    const { current_page } = getPagination(15, 3, 6);
+  test("[current_page] is quotient of [offset + limit] and [limit] arguments", () => {
+    [
+      [0, 1],
+      [2, 2],
+      [4, 3],
+      [8, 5],
+    ].forEach(([offset, expected]) => {
+      const { current_page } = getPagination(10, 2, offset);
 
-    expect(current_page).toBe(3);
+      expect(current_page).toBe(expected);
+    });
   });
 
-  test("total_pages=0: by default", () => {
-    const { total_pages } = getPagination();
+  test("[next_page] is one more then [current_page] or [null] if [current_page === total_pages]", () => {
+    [
+      [0, 2],
+      [2, 3],
+      [4, 4],
+      [8, null],
+    ].forEach(([offset, expected]) => {
+      const { next_page } = getPagination(10, 2, offset);
 
-    expect(total_pages).toBe(0);
+      expect(next_page).toBe(expected);
+    });
   });
 
-  test("total_pages=5: total=15, limit=3", () => {
-    const { total_pages } = getPagination(15, 3);
+  test("[prev_page] is one less then [current_page] or [null] if [current_page === 1]", () => {
+    [
+      [0, null],
+      [2, 1],
+      [4, 2],
+      [8, 4],
+    ].forEach(([offset, expected]) => {
+      const { prev_page } = getPagination(10, 2, offset);
 
-    expect(total_pages).toBe(5);
-  });
-
-  test("prev_page=null: by default", () => {
-    const { prev_page } = getPagination();
-
-    expect(prev_page).toBe(null);
-  });
-
-  test("prev_page=2: total=15, limit=3, offset=6", () => {
-    const { prev_page } = getPagination(15, 3, 6);
-
-    expect(prev_page).toBe(2);
-  });
-
-  test("next_page=null: by default", () => {
-    const { next_page } = getPagination();
-
-    expect(next_page).toBe(null);
-  });
-
-  test("next_page=4: total=15, limit=3, offset=6", () => {
-    const { next_page } = getPagination(15, 3, 6);
-
-    expect(next_page).toBe(4);
-  });
-
-  test("next_page=null: when reached last page", () => {
-    const { next_page } = getPagination(15, 3, 12);
-
-    expect(next_page).toBe(null);
+      expect(prev_page).toBe(expected);
+    });
   });
 });

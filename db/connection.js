@@ -13,7 +13,7 @@ const config = {};
 
 if (ENV === "production") {
   config.connectionString = process.env.PGDATABASE;
-  config.max = 2;
+  config.max = 10;
 }
 
 module.exports = new Pool(config);

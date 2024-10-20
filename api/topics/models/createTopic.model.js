@@ -10,7 +10,7 @@ function createTopic(body) {
     return rejectWith(400, "Invalid format of slug");
   }
 
-  if (!description) {
+  if (typeof description !== "string") {
     return rejectWith(400, "Invalid type of description");
   }
 
