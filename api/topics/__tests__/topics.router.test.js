@@ -14,114 +14,100 @@ describe("/api/topics", () => {
   describe("GET", () => {
     beforeAll(seedTest);
 
-    test("200: has list of topics", () => {
-      return request(app)
-        .get("/api/topics")
-        .expect(200)
-        .then((res) => {
-          const { topics } = res.body;
+    describe("Default", () => {
+      let data;
 
-          expect(topics.length).not.toBe(0);
+      test("200: responds with some data", () => {
+        return request(app)
+          .get("/api/topics")
+          .expect(200)
+          .then((res) => (data = res.body));
+      });
 
-          topics.forEach((topic) => {
-            expect(topic).toEqual(expect.objectContaining(schema));
-          });
+      test("data has [topics] with [3] valid items", () => {
+        const { topics } = data;
+
+        expect(topics.length).toBe(3);
+
+        topics.forEach((topic) => {
+          expect(topic).toEqual(expect.objectContaining(schema));
         });
+      });
     });
   });
 
   describe("POST", () => {
+    beforeAll(seedTest);
+
     describe("Mutation", () => {
-      beforeEach(seedTest);
+      let data;
 
-      test("201: has created topic", () => {
-        const payload = {
-          slug: "hello",
-          description: "description here",
-        };
+      const mandatory = {
+        slug: "hello",
+        description: "description here",
+      };
 
+      const extra = {
+        lorem: "ipsum",
+      };
+
+      test("201: responds with some data", () => {
         return request(app)
           .post("/api/topics")
-          .send(payload)
+          .send({
+            ...mandatory,
+            ...extra,
+          })
           .expect(201)
-          .then((res) => {
-            const { topic } = res.body;
-
-            expect(topic).toEqual(payload);
-          });
+          .then((res) => (data = res.body));
       });
 
-      test("201: ignores other elements", () => {
-        const payload = {
-          slug: "hello",
-          description: "description here",
-          lorem: "ipsum",
-        };
+      test("data has [topic] element with newly created topic", () => {
+        const { topic } = data;
 
-        return request(app)
-          .post("/api/topics")
-          .send(payload)
-          .expect(201)
-          .then((res) => {
-            const { topic } = res.body;
+        expect(topic).toEqual(mandatory);
+      });
 
-            expect(topic.lorem).toBe(undefined);
-          });
+      test("ignores other elements", () => {
+        const { topic } = data;
+
+        expect(topic.lorem).toBeUndefined();
       });
     });
 
     describe("Validation", () => {
-      beforeAll(seedTest);
-
-      describe("element slug", () => {
-        test("400:undefined = invalid type", () => {
-          const payload = {
-            description: "description here",
-          };
-
+      describe("slug", () => {
+        test.each([
+          [undefined, "Invalid type of slug"],
+          ["Hello World", "Invalid format of slug"],
+        ])("400: value [%s] responds with [%s]", (slug, msg) => {
           return request(app)
             .post("/api/topics")
-            .send(payload)
+            .send({
+              description: "Lorem ipsum dolor sit amet.",
+              slug,
+            })
             .expect(400)
             .then((res) => {
-              const { msg } = res.body;
-
-              expect(msg).toBe("Invalid type of slug");
-            });
-        });
-
-        test("400:'Hello World' = invalid format", () => {
-          const payload = {
-            slug: "Hello World",
-            description: "description here",
-          };
-
-          return request(app)
-            .post("/api/topics")
-            .send(payload)
-            .expect(400)
-            .then((res) => {
-              const { msg } = res.body;
-
-              expect(msg).toBe("Invalid format of slug");
+              expect(res.body.msg).toBe(msg);
             });
         });
       });
 
-      describe("element description", () => {
-        test("400:undefined = invalid type", () => {
-          const payload = {
-            slug: "hello",
-          };
-
+      describe("description", () => {
+        test.each([
+          [undefined, "Invalid type of description"],
+          [100, "Invalid type of description"],
+        ])("400: value [%s] responds with [%s]", (description, msg) => {
           return request(app)
             .post("/api/topics")
-            .send(payload)
+            .send({
+              slug: "lorem",
+              description,
+            })
             .expect(400)
             .then((res) => {
-              const { msg } = res.body;
-
-              expect(msg).toBe("Invalid type of description");
+              expect(res.body.msg).toBe(msg);
             });
         });
       });
