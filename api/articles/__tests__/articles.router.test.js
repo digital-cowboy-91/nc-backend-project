@@ -4,6 +4,7 @@ const { seedTest } = require("../../../db/seeds/seed-test.js");
 const db = require("../../../db/connection.js");
 const { customSort } = require("../../../db/seeds/utils.js");
 const { getPagination } = require("../../api.utils.js");
+const users = require("../../../db/data/test-data/users.js");
 
 afterAll(() => db.end());
 
@@ -518,7 +519,7 @@ describe("/api/articles/:article_id", () => {
   });
 });
 
-xdescribe("/api/articles/:article_id/comments", () => {
+describe("/api/articles/:article_id/comments", () => {
   const outputSchema = {
     comment_id: expect.any(Number),
     votes: expect.any(Number),
@@ -531,398 +532,263 @@ xdescribe("/api/articles/:article_id/comments", () => {
   describe("GET", () => {
     beforeAll(seedTest);
 
-    test("Responds with 200 and list of comments", () => {
-      return request(app)
-        .get("/api/articles/1/comments")
-        .expect(200)
-        .then((res) => {
-          const { comments } = res.body;
+    describe("Default", () => {
+      let data;
 
-          expect(comments.length).not.toBe(0);
+      test("200: responds with some data", () => {
+        return request(app)
+          .get("/api/articles/1/comments")
+          .expect(200)
+          .then((res) => (data = res.body));
+      });
 
-          comments.forEach((comment) => {
-            expect(comment).toEqual(expect.objectContaining(outputSchema));
+      test("data has [comments] with list of valid items", () => {
+        const { comments } = data;
+
+        expect(comments).toHaveLength(5);
+
+        comments.forEach((comment) => {
+          expect(comment).toEqual(expect.objectContaining(outputSchema));
+
+          expect(comment.article_id).toBe(1);
+        });
+      });
+
+      test("[comments] are sorted by date in descending order", () => {
+        const { comments } = data;
+
+        expect(customSort(comments, "created_at", "DESC", "time")).toBe(true);
+      });
+
+      test("200: responds with empty [comments] if article has no comments", () => {
+        return request(app)
+          .get("/api/articles/2/comments")
+          .expect(200)
+          .then((res) => {
+            const { comments } = res.body;
+
+            expect(comments.length).toBe(0);
           });
-        });
+      });
     });
 
-    test("Responds with 200 and an empty array if article has no comments", () => {
-      return request(app)
-        .get("/api/articles/2/comments")
-        .expect(200)
-        .then((res) => {
-          const { comments } = res.body;
-
-          expect(comments.length).toBe(0);
+    describe("Validation", () => {
+      describe("article_id", () => {
+        test.each([
+          [400, "hello", "Received invalid type"],
+          [404, 999, "Article does not exist"],
+        ])("%s: id [%s] responds with [%s]", (code, id, msg) => {
+          return request(app)
+            .get(`/api/articles/${id}/comments`)
+            .expect(code)
+            .then((res) => {
+              expect(res.body.msg).toBe(msg);
+            });
         });
-    });
-
-    test("Comments are ordered by date in descending order", () => {
-      return request(app)
-        .get("/api/articles/1/comments")
-        .expect(200)
-        .then((res) => {
-          const { comments } = res.body;
-
-          comments.reduce((prevDate, { created_at }) => {
-            const thisDate = new Date(created_at).getTime();
-
-            expect(prevDate >= thisDate).toBe(true);
-
-            return thisDate;
-          }, Infinity);
-        });
-    });
-
-    test("Responds with 400 and msg object when received invalid id type", () => {
-      return request(app)
-        .get("/api/articles/hello/comments")
-        .expect(400)
-        .then((res) => {
-          expect(res.body.msg).toBe("Received invalid type");
-        });
-    });
-
-    test("Responds with 404 and msg object when received non existing id", () => {
-      return request(app)
-        .get("/api/articles/999/comments")
-        .expect(404)
-        .then((res) => {
-          expect(res.body.msg).toBe("Article does not exist");
-        });
+      });
     });
 
     describe("Queries", () => {
-      describe("limit filter - 5 by default", () => {
-        const getLimitedComments = (limit) =>
-          request(app)
-            .get(
-              `/api/articles/1/comments?${
-                limit !== undefined ? "limit=" + limit : ""
-              }`
-            )
+      describe("limit - defaults to 5", () => {
+        test.each([
+          ["", 5],
+          [-1, 5],
+          [0, 5],
+          [2.8, 2],
+          [7, 7],
+          [10, 10],
+          [99, 10],
+        ])("200: value [%s] gives [%s] comments", (value, expected) => {
+          return request(app)
+            .get(`/api/articles/1/comments?limit=${value}`)
             .expect(200)
-            .then((res) => res.body.comments);
+            .then((res) => {
+              const { comments } = res.body;
 
-        test("200:undefined, defaults to 5 items", () => {
-          return getLimitedComments().then((comments) => {
-            expect(comments).toHaveLength(5);
-          });
-        });
-
-        test("200:3", () => {
-          return getLimitedComments(3).then((comments) => {
-            expect(comments).toHaveLength(3);
-          });
-        });
-
-        test("200:0, defaults to 5 items", () => {
-          return getLimitedComments(0).then((comments) => {
-            expect(comments).toHaveLength(5);
-          });
-        });
-
-        test("200:-1, defaults to 5 items", () => {
-          return getLimitedComments(-1).then((comments) => {
-            expect(comments).toHaveLength(5);
-          });
-        });
-
-        test("200:0.8, defaults to 5 items", () => {
-          return getLimitedComments(0.8).then((comments) => {
-            expect(comments).toHaveLength(5);
-          });
-        });
-
-        test("200:1000, serves 10 items max", () => {
-          return getLimitedComments(1000).then((comments) => {
-            expect(comments).toHaveLength(10);
-          });
+              expect(comments).toHaveLength(expected);
+            });
         });
       });
 
-      describe("page filter", () => {
+      describe("page - defaults to 1", () => {
         const articleOneCommentIds = [5, 2, 18, 13, 7, 8, 6, 12, 3, 4, 9];
-        const getLimitedComments = (limit, page) => {
-          const queries = [
-            "sort_by=article_id",
-            "order=ASC",
-            limit !== undefined && `limit=${limit}`,
-            page !== undefined && `page=${page}`,
-          ]
-            .filter((q) => q)
-            .join("&");
 
+        const p1 = articleOneCommentIds.slice(0, 5);
+        const p2 = articleOneCommentIds.slice(5, 10);
+        const p3 = articleOneCommentIds.slice(10);
+
+        test.each([
+          [undefined, p1],
+          ["hello", p1],
+          ["", p1],
+          [1, p1],
+          [2, p2],
+          [2.5, p2],
+          [3, p3],
+          [4, []],
+        ])("200: page [%s] has items with ids %s", (page, ids) => {
           return request(app)
-            .get(`/api/articles/1/comments?${queries}`)
-            .expect(200)
-            .then((res) => res.body.comments);
-        };
-
-        test("200:undefined, has ids from index 0-4", () => {
-          return getLimitedComments().then((comments) => {
-            expect(comments).toHaveLength(5);
-
-            comments.forEach(({ comment_id }, index) => {
-              expect(comment_id).toBe(articleOneCommentIds[index]);
-            });
-          });
-        });
-
-        test("200:1, has ids from index 0-4", () => {
-          return getLimitedComments(5, 1).then((comments) => {
-            expect(comments).toHaveLength(5);
-
-            comments.forEach(({ comment_id }, index) => {
-              expect(comment_id).toBe(articleOneCommentIds[index]);
-            });
-          });
-        });
-
-        test("200:2, has ids from index 5-9", () => {
-          return getLimitedComments(5, 2).then((comments) => {
-            expect(comments).toHaveLength(5);
-
-            comments.forEach(({ comment_id }, index) => {
-              expect(comment_id).toBe(articleOneCommentIds[index + 5]);
-            });
-          });
-        });
-
-        test("200:3, has ids from index 10-11", () => {
-          return getLimitedComments(5, 3).then((comments) => {
-            expect(comments).toHaveLength(1);
-
-            comments.forEach(({ comment_id }, index) => {
-              expect(comment_id).toBe(articleOneCommentIds[index + 10]);
-            });
-          });
-        });
-
-        test("200:4, has empty array", () => {
-          return getLimitedComments(5, 4).then((comments) => {
-            expect(comments).toHaveLength(0);
-          });
-        });
-
-        test("200:0, has ids from index 0-4", () => {
-          return getLimitedComments(5, 1).then((comments) => {
-            expect(comments).toHaveLength(5);
-
-            comments.forEach(({ comment_id }, index) => {
-              expect(comment_id).toBe(articleOneCommentIds[index]);
-            });
-          });
-        });
-
-        test("200:-1, has ids from index 0-4", () => {
-          return getLimitedComments(5, -1).then((comments) => {
-            expect(comments).toHaveLength(5);
-
-            comments.forEach(({ comment_id }, index) => {
-              expect(comment_id).toBe(articleOneCommentIds[index]);
-            });
-          });
-        });
-
-        test("200:0.8, has ids from index 0-4", () => {
-          return getLimitedComments(5, 0.8).then((comments) => {
-            expect(comments).toHaveLength(5);
-
-            comments.forEach(({ comment_id }, index) => {
-              expect(comment_id).toBe(articleOneCommentIds[index]);
-            });
-          });
-        });
-
-        test("200:hello, has ids from index 0-4", () => {
-          return getLimitedComments(5, "hello").then((comments) => {
-            expect(comments).toHaveLength(5);
-
-            comments.forEach(({ comment_id }, index) => {
-              expect(comment_id).toBe(articleOneCommentIds[index]);
-            });
-          });
-        });
-      });
-
-      describe("pagination", () => {
-        test("200:limit=1, total_pages=11", () => {
-          return request(app)
-            .get("/api/articles/1/comments?limit=1")
+            .get(`/api/articles/1/comments?page=${page}`)
             .expect(200)
             .then((res) => {
-              const {
-                pagination: { total_pages },
-              } = res.body;
+              const { comments } = res.body;
 
-              expect(total_pages).toBe(11);
-            });
-        });
-
-        test("200:limit=3, total_pages=4", () => {
-          return request(app)
-            .get("/api/articles/1/comments?limit=3")
-            .expect(200)
-            .then((res) => {
-              const {
-                pagination: { total_pages },
-              } = res.body;
-
-              expect(total_pages).toBe(4);
-            });
-        });
-
-        test("200:page=2, prev_page=1, next_page=3", () => {
-          return request(app)
-            .get("/api/articles/1/comments?page=2")
-            .expect(200)
-            .then((res) => {
-              const {
-                pagination: { prev_page, next_page },
-              } = res.body;
-
-              expect(prev_page).toBe(1);
-              expect(next_page).toBe(3);
-            });
-        });
-
-        test("200:page=3, prev_page=2, next_page=null", () => {
-          return request(app)
-            .get("/api/articles/1/comments?page=3")
-            .expect(200)
-            .then((res) => {
-              const {
-                pagination: { prev_page, next_page },
-              } = res.body;
-
-              expect(prev_page).toBe(2);
-              expect(next_page).toBe(null);
+              expect(comments.map(({ comment_id }) => comment_id)).toEqual(ids);
             });
         });
       });
+    });
+
+    describe("Pagination", () => {
+      test.each([
+        [
+          1,
+          1,
+          {
+            total_count: 11,
+            current_page: 1,
+            total_pages: 11,
+            next_page: 2,
+            prev_page: null,
+          },
+        ],
+        [
+          5,
+          2,
+          {
+            total_count: 11,
+            current_page: 2,
+            total_pages: 3,
+            next_page: 3,
+            prev_page: 1,
+          },
+        ],
+        [
+          3,
+          4,
+          {
+            total_count: 11,
+            current_page: 4,
+            total_pages: 4,
+            next_page: null,
+            prev_page: 3,
+          },
+        ],
+      ])(
+        "200: limit [%s] and page [%s] gives valid object [%o]",
+        (limit, page, expected) => {
+          return request(app)
+            .get(`/api/articles/1/comments?limit=${limit}&page=${page}`)
+            .expect(200)
+            .then((res) => {
+              const { pagination } = res.body;
+
+              expect(pagination).toEqual(expected);
+            });
+        }
+      );
     });
   });
 
   describe("POST", () => {
-    describe("Mutation", () => {
-      beforeEach(seedTest);
+    const useMandatory = () => ({
+      username: "lurker",
+      body: "Lorem ipsum dolor sit amet.",
+    });
 
-      test("Responds with 201 and created comment", () => {
+    const useExtra = () => ({
+      article_id: 999,
+      comment_id: 999,
+      hello: "world",
+    });
+
+    describe("Mutation", () => {
+      beforeAll(seedTest);
+
+      let data;
+
+      test("201: responds with some data", () => {
         return request(app)
           .post("/api/articles/1/comments")
           .send({
-            username: "lurker",
-            body: "Lorem ipsum dolor sit amet.",
+            ...useMandatory(),
+            ...useExtra(),
           })
           .expect(201)
-          .then((res) => {
-            const { comment } = res.body;
-
-            expect(comment).toEqual(expect.objectContaining(outputSchema));
-          });
+          .then((res) => (data = res.body));
       });
 
-      test("Ignores extra elements", () => {
-        return request(app)
-          .post("/api/articles/1/comments")
-          .send({
-            username: "lurker",
-            body: "Lorem ipsum dolor sit amet.",
-            votes: 100,
-            hello: "world",
-          })
-          .expect(201)
-          .then((res) => {
-            const { comment } = res.body;
+      test("data has [comment] with valid elements", () => {
+        const { comment } = data;
+        const { username, body } = useMandatory();
 
-            expect(comment.votes).not.toBe(100);
-            expect(comment.hello).toBeUndefined();
-          });
+        expect(comment).toEqual(expect.objectContaining(outputSchema));
+        expect(comment.author).toBe(username);
+        expect(comment.body).toBe(body);
+      });
+
+      test("ignores extra properties", () => {
+        const { comment } = data;
+        const { article_id, comment_id, hello } = useExtra();
+
+        expect(comment.article_id).not.toBe(article_id);
+        expect(comment.comment_id).not.toBe(comment_id);
+        expect(comment.hello).toBeUndefined();
       });
     });
 
     describe("Validation", () => {
       beforeAll(seedTest);
 
-      test("Responds with 400 when body is missing or has invalid type", () => {
-        return request(app)
-          .post("/api/articles/1/comments")
-          .send()
-          .expect(400)
-          .then((res) => {
-            expect(res.body.msg).toBe("Invalid data");
-          });
-      });
-
-      describe("element article_id", () => {
-        test("Responds with 400 when received invalid id type", () => {
+      describe("body", () => {
+        test.each([
+          [400, true, "Element 'body' has wrong type"],
+          [400, "", "Element 'body' is too short"],
+        ])("%s: value [%s] responds with [%s]", (code, body, msg) => {
           return request(app)
-            .post("/api/articles/hello/comments")
+            .post(`/api/articles/1/comments`)
             .send({
-              username: "lurker",
-              body: "Lorem ipsum dolor sit amet.",
+              ...useMandatory,
+              body,
             })
-            .expect(400)
+            .expect(code)
             .then((res) => {
-              expect(res.body.msg).toBe("Received invalid type");
+              expect(res.body.msg).toBe(msg);
             });
         });
+      });
 
-        test("Responds with 400 when received non existing id", () => {
+      describe("username", () => {
+        test.each([
+          [400, 1, "Element 'username' has wrong type"],
+          [400, "hello", "Received invalid reference value"],
+        ])("%s: value [%s] responds with [%s]", (code, username, msg) => {
           return request(app)
-            .post("/api/articles/999/comments")
+            .post(`/api/articles/1/comments`)
             .send({
-              username: "lurker",
-              body: "Lorem ipsum dolor sit amet.",
+              ...useMandatory(),
+              username,
             })
-            .expect(400)
+            .expect(code)
             .then((res) => {
-              expect(res.body.msg).toBe("Received invalid reference value");
+              expect(res.body.msg).toBe(msg);
             });
         });
       });
 
-      describe("element body", () => {
-        test("Responds with 400 when body element is of wrong type", () => {
+      describe("article_id", () => {
+        test.each([
+          [400, "hello", "Received invalid type"],
+          [404, 999, "Article does not exist"],
+        ])("%s: value [%s] responds with [%s]", (code, id, msg) => {
           return request(app)
-            .post("/api/articles/1/comments")
-            .send({ username: "lurker", body: true })
-            .expect(400)
+            .post(`/api/articles/${id}/comments`)
+            .send({
+              ...useMandatory(),
+            })
+            .expect(code)
             .then((res) => {
-              expect(res.body.msg).toBe("Element 'body' has wrong type");
-            });
-        });
-
-        test("Responds with 400 when body element is too short", () => {
-          return request(app)
-            .post("/api/articles/1/comments")
-            .send({ username: "lurker", body: "" })
-            .expect(400)
-            .then((res) => {
-              expect(res.body.msg).toBe("Element 'body' is too short");
-            });
-        });
-      });
-
-      describe("element username", () => {
-        test("Responds with 400 when username element is of wrong type", () => {
-          return request(app)
-            .post("/api/articles/1/comments")
-            .send({ body: "Lorem ipsum dolor sit amet." })
-            .expect(400)
-            .then((res) => {
-              expect(res.body.msg).toBe("Element 'username' has wrong type");
-            });
-        });
-
-        test("Responds with 400 when username element is invalid", () => {
-          return request(app)
-            .post("/api/articles/1/comments")
-            .send({ username: "hello", body: "Lorem ipsum dolor sit amet." })
-            .expect(400)
-            .then((res) => {
-              expect(res.body.msg).toBe("Received invalid reference value");
+              expect(res.body.msg).toBe(msg);
             });
         });
       });
