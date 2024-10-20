@@ -378,7 +378,7 @@ describe("/api/articles/:article_id", () => {
   describe("GET", () => {
     beforeAll(seedTest);
 
-    test("Responds with 200 and single article", () => {
+    test("200: responds with a valid article", () => {
       return request(app)
         .get("/api/articles/1")
         .expect(200)
@@ -389,124 +389,97 @@ describe("/api/articles/:article_id", () => {
         });
     });
 
-    test("Responds with 400 and msg object when received invalid id type", () => {
+    test.each([
+      [400, "hello", "Received invalid type"],
+      [404, 999, "Article does not exist"],
+    ])("%s: id [%s] responds with [%s]", (code, id, msg) => {
       return request(app)
-        .get("/api/articles/hello_world")
-        .expect(400)
+        .get(`/api/articles/${id}`)
+        .expect(code)
         .then((res) => {
-          expect(res.body.msg).toBe("Received invalid type");
-        });
-    });
-
-    test("Responds with 404 and msg object when received non existing id", () => {
-      return request(app)
-        .get("/api/articles/999")
-        .expect(404)
-        .then((res) => {
-          expect(res.body.msg).toBe("Article does not exist");
+          expect(res.body.msg).toBe(msg);
         });
     });
   });
 
   describe("PATCH", () => {
-    const getArticleById = (id) =>
-      request(app)
-        .get("/api/articles/" + id)
-        .then((res) => res.body.article);
+    beforeAll(seedTest);
 
     describe("Mutation", () => {
-      beforeEach(seedTest);
+      test.each([
+        [1, 10, 110],
+        [2, -10, -10],
+        [2, 13, 3],
+      ])(
+        "200: article [%s] votes change by [%s] to [%s]",
+        (articleId, inc_votes, expected) => {
+          return request(app)
+            .patch(`/api/articles/${articleId}`)
+            .send({ inc_votes })
+            .expect(200)
+            .then((res) => {
+              const { article } = res.body;
 
-      test("Responds with 200 and updated article", () => {
-        let originalArticle;
+              expect(article.votes).toBe(expected);
+            });
+        }
+      );
 
-        const newVote = -10;
+      test("200: does not update other fields", () => {
+        const payload = {
+          article_id: 1,
+          author: "lorem",
+          title: "lorem",
+          body: "Lorem ipsum dolor sit amet.",
+          topic: "lorem",
+          article_img_url: "https://hello-world.co.uk/some/random/img.jpg",
+        };
 
-        return getArticleById(1)
-          .then((article) => {
-            article.votes += newVote;
-            originalArticle = article;
-
-            return request(app)
-              .patch("/api/articles/1")
-              .send({ inc_votes: newVote })
-              .expect(200);
+        return request(app)
+          .patch(`/api/articles/3`)
+          .send({
+            ...payload,
+            inc_votes: 10,
           })
+          .expect(200)
           .then((res) => {
-            const { article: patchedArticle } = res.body;
+            const { article } = res.body;
 
-            expect(originalArticle).toEqual(patchedArticle);
-          });
-      });
+            expect(article.votes).toBe(10);
 
-      test("Does not update other fields", () => {
-        let originalArticle;
-
-        const newVote = 10;
-
-        return getArticleById(1)
-          .then((article) => {
-            article.votes += newVote;
-            originalArticle = article;
-
-            return request(app)
-              .patch("/api/articles/1")
-              .send({ inc_votes: newVote, article_id: 0, title: "Hello" })
-              .expect(200);
-          })
-          .then((res) => {
-            const { article: patchedArticle } = res.body;
-
-            expect(originalArticle).toEqual(patchedArticle);
+            Object.entries(payload).forEach(([key, val]) => {
+              expect(article[key]).not.toBe(val);
+            });
           });
       });
     });
 
     describe("Validation", () => {
-      beforeAll(seedTest);
-
-      describe("element inc_votes", () => {
-        test("Responds with 400 when inc_votes is of wrong type", () => {
+      describe("inc_votes", () => {
+        test.each([
+          ["hello", "Element 'inc_votes' has invalid type"],
+          [0.5, "Invalid 'inc_votes', expected whole number"],
+        ])("400: value [%s] responds with [%s]", (inc_votes, msg) => {
           return request(app)
-            .patch("/api/articles/1")
-            .send({ inc_votes: "hello", article_id: 0, title: "Hello" })
+            .patch(`/api/articles/1`)
+            .send({ inc_votes })
             .expect(400)
             .then((res) => {
-              expect(res.body.msg).toBe("Element 'inc_votes' has invalid type");
-            });
-        });
-
-        test("Responds with 400 when inc_votes is not whole number", () => {
-          return request(app)
-            .patch("/api/articles/1")
-            .send({ inc_votes: 0.8 })
-            .expect(400)
-            .then((res) => {
-              expect(res.body.msg).toBe(
-                "Invalid 'inc_votes', expected whole number"
-              );
+              expect(res.body.msg).toBe(msg);
             });
         });
       });
 
-      describe("element article_id", () => {
-        test("Responds with 400 when received invalid id type", () => {
+      describe("article_id", () => {
+        test.each([
+          [400, "hello", "Received invalid type"],
+          [404, 999, "Article does not exist"],
+        ])("%s: id [%s] responds with [%s]", (code, id, msg) => {
           return request(app)
-            .patch("/api/articles/hello")
-            .send({ inc_votes: 10 })
-            .expect(400)
+            .get(`/api/articles/${id}`)
+            .expect(code)
             .then((res) => {
-              expect(res.body.msg).toBe("Received invalid type");
-            });
-        });
-
-        test("Responds with 404 when received non existing id", () => {
-          return request(app)
-            .patch("/api/articles/999")
-            .send({ inc_votes: 10 })
-            .expect(404)
-            .then((res) => {
-              expect(res.body.msg).toBe("Article does not exist");
+              expect(res.body.msg).toBe(msg);
             });
         });
       });
@@ -514,9 +487,9 @@ describe("/api/articles/:article_id", () => {
   });
 
   describe("DELETE", () => {
-    describe("Mutation", () => {
-      beforeEach(seedTest);
+    beforeAll(seedTest);
 
+    describe("Mutation", () => {
       test("204: has no content", () => {
         return request(app)
           .delete("/api/articles/1")
@@ -528,23 +501,18 @@ describe("/api/articles/:article_id", () => {
     });
 
     describe("Validation", () => {
-      beforeAll(seedTest);
-
-      test("400: article_id has invalid type", () => {
-        return request(app)
-          .delete("/api/articles/hello")
-          .expect(400)
-          .then((res) => {
-            expect(res.body.msg).toBe("Received invalid type");
-          });
-      });
-      test("404: article_id not found", () => {
-        return request(app)
-          .delete("/api/articles/999")
-          .expect(404)
-          .then((res) => {
-            expect(res.body.msg).toBe("Article not found");
-          });
+      describe("article_id", () => {
+        test.each([
+          [400, "hello", "Received invalid type"],
+          [404, 999, "Article does not exist"],
+        ])("%s: id [%s] responds with [%s]", (code, id, msg) => {
+          return request(app)
+            .get(`/api/articles/${id}`)
+            .expect(code)
+            .then((res) => {
+              expect(res.body.msg).toBe(msg);
+            });
+        });
       });
     });
   });
