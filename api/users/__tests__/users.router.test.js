@@ -14,44 +14,55 @@ const schema = {
 
 describe("/api/users", () => {
   describe("GET", () => {
-    test("Responds with 200 and list of users", () => {
-      return request(app)
-        .get("/api/users")
-        .expect(200)
-        .then((res) => {
-          const { users } = res.body;
+    describe("Default", () => {
+      test("200: responds with list of users", () => {
+        return request(app)
+          .get("/api/users")
+          .expect(200)
+          .then((res) => {
+            const { users } = res.body;
 
-          expect(users.length).not.toBe(0);
+            expect(users.length).toBe(4);
 
-          users.forEach((user) => {
-            expect(user).toEqual(expect.objectContaining(schema));
+            users.forEach((user) => {
+              expect(user).toEqual(expect.objectContaining(schema));
+            });
           });
-        });
+      });
     });
   });
 });
 
 describe("/api/users/:username", () => {
   describe("GET", () => {
-    test("200: responds with user", () => {
-      return request(app)
-        .get("/api/users/lurker")
-        .expect(200)
-        .then((res) => {
-          const { user } = res.body;
+    describe("Default", () => {
+      test("200: responds with [user]", () => {
+        return request(app)
+          .get("/api/users/lurker")
+          .expect(200)
+          .then((res) => {
+            const { user } = res.body;
 
-          expect(user.username).toBe("lurker");
-          expect(user).toEqual(expect.objectContaining(schema));
-        });
+            expect(user.username).toBe("lurker");
+            expect(user).toEqual(expect.objectContaining(schema));
+          });
+      });
     });
 
-    test("404: when called with non existing username", () => {
-      return request(app)
-        .get("/api/users/hello")
-        .expect(404)
-        .then((res) => {
-          expect(res.body.msg).toBe("User not found");
+    describe("Validation", () => {
+      describe("username", () => {
+        test.each([
+          [404, "hello", "User not found"],
+          [404, 999, "User not found"],
+        ])("%s: value [%s] responds with [%s]", (code, username, msg) => {
+          return request(app)
+            .get(`/api/users/${username}`)
+            .expect(code)
+            .then((res) => {
+              expect(res.body.msg).toBe(msg);
+            });
         });
+      });
     });
   });
 });
