@@ -18,7 +18,7 @@ function readArticles(query) {
   };
 
   const sortBy = query.sort_by ?? "created_at";
-  const order = query.order ?? "DESC";
+  const order = query.order?.toUpperCase() ?? "DESC";
   const topic = query.topic;
   const limit = getLimit(query.limit);
   const offset = getOffset(limit, query.page);
