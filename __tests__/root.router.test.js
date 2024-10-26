@@ -1,8 +1,8 @@
 const request = require("supertest");
-const app = require("../../app.js");
-const db = require("../../db/connection.js");
-const endpointsData = require("../../endpoints.json");
-const { seedTest } = require("../../db/seeds/seed-test.js");
+const app = require("../app.js");
+const db = require("../db/connection.js");
+const endpointsData = require("../endpoints.json");
+const { seedTest } = require("../db/seeds/seed-test.js");
 
 afterAll(() => db.end());
 

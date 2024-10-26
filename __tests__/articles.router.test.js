@@ -1,10 +1,10 @@
 const request = require("supertest");
-const app = require("../../../app.js");
-const { seedTest } = require("../../../db/seeds/seed-test.js");
-const db = require("../../../db/connection.js");
-const { customSort } = require("../../../db/seeds/utils.js");
-const { getPagination } = require("../../api.utils.js");
-const users = require("../../../db/data/test-data/users.js");
+const app = require("../app.js");
+const { seedTest } = require("../db/seeds/seed-test.js");
+const db = require("../db/connection.js");
+const { customSort } = require("../db/seeds/utils.js");
+const { getPagination } = require("../api/api.utils.js");
+const users = require("../db/data/test-data/users.js");
 
 afterAll(() => db.end());
 
