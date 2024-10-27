@@ -1,4 +1,8 @@
-const { getLimit, getOffset, getPagination } = require("../api/api.utils.js");
+const {
+  getLimit,
+  getOffset,
+  getPagination,
+} = require("../../api/api.utils.js");
 
 describe("getLimit", () => {
   test("returns [5] by default", () => {

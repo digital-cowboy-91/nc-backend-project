@@ -3,7 +3,7 @@ const {
   createRef,
   formatComments,
   customSort,
-} = require("../db/seeds/utils");
+} = require("../../db/seeds/utils");
 require("jest-extended/all");
 
 describe("convertTimestampToDate", () => {
