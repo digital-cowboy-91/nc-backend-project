@@ -1,4 +1,5 @@
 const express = require("express");
+const cors = require("cors");
 
 const apiRoot = require("./api/root.router");
 const articles = require("./api/articles/articles.router");
@@ -11,7 +12,7 @@ const handlePGErrors = require("./api/middlewares/handlePgErrors");
 const handleCustomErrors = require("./api/middlewares/handleCustomErrors");
 
 const app = express();
-
+app.use(cors());
 app.use(express.json());
 
 app.use(apiRoot);
